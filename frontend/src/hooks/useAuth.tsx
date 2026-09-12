@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, logoutUser } from '@/services/auth';
+import { authApi } from '@/features/auth/services/authApi';
 import type { User } from '@/types/api';
 
 interface AuthContextType {
@@ -33,13 +33,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
       return;
     }
-    getCurrentUser()
+    authApi.getCurrentUser()
       .then((u) => {
         setUser(u);
         setIsLoading(false);
       })
       .catch(() => {
-        logoutUser();
+        authApi.logoutUser();
         setToken(null);
         setUser(null);
         setIsLoading(false);
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (newToken: string) => {
       localStorage.setItem('access_token', newToken);
       setToken(newToken);
-      const u = await getCurrentUser();
+      const u = await authApi.getCurrentUser();
       setUser(u);
       navigate('/dashboard');
     },
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    logoutUser();
+    authApi.logoutUser();
     setToken(null);
     setUser(null);
     navigate('/login');

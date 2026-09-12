@@ -2,21 +2,26 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
 venv/
-ENV/
-.env/
-.env
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.sqlite3
 
-# Django
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
 *.log
-*.pot
-*.pyc
-local_settings.py
-db.sqlite3
-/media
-/staticfiles
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
 
 # IDEs and editors
 .vscode/
