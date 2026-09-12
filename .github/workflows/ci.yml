@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hms_user
+          POSTGRES_PASSWORD: hms_password
+          POSTGRES_DB: hms_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hms_user -d hms_test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg2://hms_user:hms_password@localhost:5432/hms_test_db
+      TEST_DATABASE_URL: postgresql+psycopg2://hms_user:hms_password@localhost:5432/hms_test_db
+      JWT_SECRET_KEY: ci-test-secret-key-not-for-production
+      ENVIRONMENT: testing
+      DEBUG: "false"
+      CORS_ORIGINS: '["http://localhost:5173"]'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov httpx ruff
+
+      - name: Ruff lint
+        working-directory: backend
+        run: ruff check app/ tests/
+
+      - name: Ruff format check
+        working-directory: backend
+        run: ruff format --check app/ tests/
+
+      - name: Run unit tests
+        working-directory: backend
+        run: pytest tests/unit/ -v --tb=short
+
+      - name: Run integration tests
+        working-directory: backend
+        run: pytest tests/integration/ -v --tb=short --cov=app --cov-report=term-missing
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: backend
+        run: docker build -t hms-backend .
+
+      - name: Verify container starts
+        working-directory: backend
+        run: |
+          docker run -d --name hms-test \
+            -e DATABASE_URL=sqlite:///./test.db \
+            -e JWT_SECRET_KEY=test-secret \
+            -p 8000:8000 \
+            hms-backend
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1
+          docker stop hms-test
+          docker rm hms-test
