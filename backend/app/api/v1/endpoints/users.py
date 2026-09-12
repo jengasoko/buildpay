@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role
 from app.core.database import get_db
-from app.models import User
+from app.models import User, UserRole
 from app.schemas import PaginatedResponse, UserResponse, UserUpdate
 from app.services import user_service
 
@@ -20,7 +20,7 @@ def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
     return user_service.list_users(db, page=page, page_size=page_size)
 
@@ -29,7 +29,7 @@ def list_users(
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
     return user_service.get_user(db, user_id)
 
@@ -39,6 +39,6 @@ def update_user(
     user_id: int,
     data: UserUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
     return user_service.update_user(db, user_id, data)

@@ -33,8 +33,7 @@ def create_user(db: Session, user_data: dict) -> User:
 
 def update_user(db: Session, user: User, update_data: dict) -> User:
     for key, value in update_data.items():
-        if value is not None:
-            setattr(user, key, value)
+        setattr(user, key, value)
     db.commit()
     db.refresh(user)
     return user

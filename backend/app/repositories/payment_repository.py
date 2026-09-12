@@ -29,8 +29,7 @@ def create_payment(db: Session, payment_data: dict) -> Payment:
 
 def update_payment(db: Session, payment: Payment, update_data: dict) -> Payment:
     for key, value in update_data.items():
-        if value is not None:
-            setattr(payment, key, value)
+        setattr(payment, key, value)
     db.commit()
     db.refresh(payment)
     return payment

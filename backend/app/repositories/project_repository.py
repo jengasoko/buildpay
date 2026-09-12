@@ -25,8 +25,7 @@ def create_project(db: Session, project_data: dict) -> Project:
 
 def update_project(db: Session, project: Project, update_data: dict) -> Project:
     for key, value in update_data.items():
-        if value is not None:
-            setattr(project, key, value)
+        setattr(project, key, value)
     db.commit()
     db.refresh(project)
     return project

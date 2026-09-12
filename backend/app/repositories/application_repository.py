@@ -29,8 +29,7 @@ def create_application(db: Session, application_data: dict) -> Application:
 
 def update_application(db: Session, application: Application, update_data: dict) -> Application:
     for key, value in update_data.items():
-        if value is not None:
-            setattr(application, key, value)
+        setattr(application, key, value)
     db.commit()
     db.refresh(application)
     return application

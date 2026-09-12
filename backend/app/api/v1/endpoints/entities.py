@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import require_role
 from app.core.database import get_db
-from app.models import User
+from app.models import User, UserRole
 from app.schemas import (
     ApplicationCreate,
     ApplicationResponse,
@@ -20,13 +20,15 @@ from app.services import application_service, house_service, project_service
 
 router = APIRouter(tags=["Projects"])
 
+MANAGER_ROLES = (UserRole.ADMIN, UserRole.PROJECT_MANAGER)
+
 
 # --- Projects ---
 @router.post("/projects", response_model=ProjectResponse, status_code=201)
 def create_project(
     data: ProjectCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     return project_service.create_project(db, data)
 
@@ -36,7 +38,7 @@ def list_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return project_service.list_projects(db, page=page, page_size=page_size)
 
@@ -45,7 +47,7 @@ def list_projects(
 def get_project(
     project_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return project_service.get_project(db, project_id)
 
@@ -55,7 +57,7 @@ def update_project(
     project_id: int,
     data: ProjectUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     return project_service.update_project(db, project_id, data)
 
@@ -64,7 +66,7 @@ def update_project(
 def delete_project(
     project_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     project_service.delete_project(db, project_id)
     return None
@@ -75,7 +77,7 @@ def delete_project(
 def create_house(
     data: HouseCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     return house_service.create_house(db, data)
 
@@ -86,7 +88,7 @@ def list_houses(
     page_size: int = Query(100, ge=1, le=500),
     available_only: bool = Query(False),
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return house_service.list_houses(db, page=page, page_size=page_size, available_only=available_only)
 
@@ -95,7 +97,7 @@ def list_houses(
 def get_house(
     house_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return house_service.get_house(db, house_id)
 
@@ -105,7 +107,7 @@ def update_house(
     house_id: int,
     data: HouseUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     return house_service.update_house(db, house_id, data)
 
@@ -114,7 +116,7 @@ def update_house(
 def delete_house(
     house_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
     house_service.delete_house(db, house_id)
     return None
@@ -125,9 +127,9 @@ def delete_house(
 def create_application(
     data: ApplicationCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.EMPLOYER, UserRole.EMPLOYEE)),
 ):
-    return application_service.create_application(db, data)
+    return application_service.create_application(db, data, current_user=current_user)
 
 
 @router.get("/applications", response_model=PaginatedResponse)
@@ -135,7 +137,7 @@ def list_applications(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return application_service.list_applications(db, page=page, page_size=page_size)
 
@@ -144,16 +146,17 @@ def list_applications(
 def get_application(
     application_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(require_role(*UserRole)),
 ):
     return application_service.get_application(db, application_id)
 
 
+# --- Application status workflow ---
 @router.put("/applications/{application_id}", response_model=ApplicationResponse)
 def update_application(
     application_id: int,
     data: ApplicationUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.EMPLOYER, UserRole.FINANCIAL_OFFICER)),
 ):
-    return application_service.update_application(db, application_id, data)
+    return application_service.update_application(db, application_id, data, current_user=current_user)

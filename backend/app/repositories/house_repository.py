@@ -31,8 +31,7 @@ def create_house(db: Session, house_data: dict) -> House:
 
 def update_house(db: Session, house: House, update_data: dict) -> House:
     for key, value in update_data.items():
-        if value is not None:
-            setattr(house, key, value)
+        setattr(house, key, value)
     db.commit()
     db.refresh(house)
     return house
