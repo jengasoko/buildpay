@@ -220,6 +220,53 @@ class TestApplicationWorkflow:
         )
         assert response.status_code == 403
 
+    def test_list_application_includes_house_and_employee(self, client, db_session):
+        employee, employer, officer, house = self._seed(client, db_session)
+        emp_token = _login(client, "wf_emp")
+        client.post(
+            "/api/v1/applications",
+            json={"employee_id": employee.id, "house_id": house.id},
+            headers=_auth_headers(emp_token),
+        )
+
+        response = client.get("/api/v1/applications", headers=_auth_headers(emp_token))
+        assert response.status_code == 200
+        item = response.json()["items"][0]
+        assert item["house_title"] == "Unit 101"
+        assert item["employee_username"] == "wf_emp"
+
+    def test_filter_applications_by_status(self, client, db_session):
+        employee, employer, officer, house = self._seed(client, db_session)
+        emp_token = _login(client, "wf_emp")
+        create_resp = client.post(
+            "/api/v1/applications",
+            json={"employee_id": employee.id, "house_id": house.id},
+            headers=_auth_headers(emp_token),
+        )
+        application_id = create_resp.json()["id"]
+
+        pending = client.get(
+            "/api/v1/applications?status=PENDING",
+            headers=_auth_headers(emp_token),
+        )
+        assert pending.status_code == 200
+        assert pending.json()["total"] == 1
+
+        employer_token = _login(client, "wf_employer")
+        approved = client.put(
+            f"/api/v1/applications/{application_id}",
+            json={"status": "EMPLOYER_APPROVED"},
+            headers=_auth_headers(employer_token),
+        )
+        assert approved.status_code == 200
+
+        filtered = client.get(
+            "/api/v1/applications?status=EMPLOYER_APPROVED",
+            headers=_auth_headers(emp_token),
+        )
+        assert filtered.status_code == 200
+        assert filtered.json()["total"] == 1
+
 
 class TestNullUpdates:
     def _seed_admin(self, client, db_session):

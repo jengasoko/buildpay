@@ -1,15 +1,21 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import type { UserRole } from '@/types/api';
 
-const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/users', label: 'Users' },
-  { to: '/payments', label: 'Payments' },
+const NAV_ITEMS: Array<{ to: string; label: string; roles: UserRole[] }> = [
+  { to: '/dashboard', label: 'Dashboard', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
+  { to: '/projects', label: 'Projects', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
+  { to: '/houses', label: 'Houses', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
+  { to: '/applications', label: 'Applications', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
+  { to: '/users', label: 'Users', roles: ['ADMIN'] },
+  { to: '/payments', label: 'Payments', roles: ['ADMIN', 'FINANCIAL_OFFICER'] },
 ];
 
 export function MainLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const role = user?.role ?? 'EMPLOYEE';
+  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -21,7 +27,7 @@ export function MainLayout() {
                 HMS
               </Link>
               <div className="hidden sm:flex space-x-1">
-                {NAV_ITEMS.map((item) => (
+                {visibleItems.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}

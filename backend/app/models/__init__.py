@@ -101,6 +101,14 @@ class Application(Base):
     house: Mapped["House"] = relationship("House", back_populates="applications")
     payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="application")
 
+    @property
+    def house_title(self) -> str:
+        return self.house.title if self.house else ""
+
+    @property
+    def employee_username(self) -> str:
+        return self.employee.username if self.employee else ""
+
 
 class Payment(Base):
     __tablename__ = "payments"

@@ -1,22 +1,41 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Application
+from app.models import Application, ApplicationStatus
 
 
 def get_application_by_id(db: Session, application_id: int) -> Application | None:
-    return db.query(Application).filter(Application.id == application_id).first()
+    return (
+        db.query(Application)
+        .options(joinedload(Application.house), joinedload(Application.employee))
+        .filter(Application.id == application_id)
+        .first()
+    )
 
 
-def get_applications(db: Session, skip: int = 0, limit: int = 100) -> list[Application]:
-    return db.query(Application).offset(skip).limit(limit).all()
+def get_applications(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    status: ApplicationStatus | None = None,
+) -> list[Application]:
+    query = db.query(Application).options(
+        joinedload(Application.house),
+        joinedload(Application.employee),
+    )
+    if status is not None:
+        query = query.filter(Application.status == status)
+    return query.offset(skip).limit(limit).all()
 
 
 def get_applications_by_employee(db: Session, employee_id: int) -> list[Application]:
     return db.query(Application).filter(Application.employee_id == employee_id).all()
 
 
-def count_applications(db: Session) -> int:
-    return db.query(Application).count()
+def count_applications(db: Session, status: ApplicationStatus | None = None) -> int:
+    query = db.query(Application)
+    if status is not None:
+        query = query.filter(Application.status == status)
+    return query.count()
 
 
 def create_application(db: Session, application_data: dict) -> Application:

@@ -151,6 +151,8 @@ class ApplicationResponse(BaseModel):
     house_id: int
     status: ApplicationStatus
     created_at: datetime
+    house_title: str
+    employee_username: str
 
     model_config = {"from_attributes": True}
 

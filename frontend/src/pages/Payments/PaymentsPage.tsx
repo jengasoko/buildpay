@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { usePayments } from '@/features/payments/hooks/usePayments';
+import { PaymentFormModal } from '@/features/payments/components/PaymentFormModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { EmptyState } from '@/components/common/EmptyState';
+import type { Payment } from '@/types/api';
 
 export function PaymentsPage() {
   const [page, setPage] = useState(1);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<Payment | undefined>(undefined);
   const { data, isLoading, error, refetch } = usePayments({ page, page_size: 20 });
 
   if (isLoading) return <LoadingSpinner message="Loading payments..." />;
@@ -16,8 +20,19 @@ export function PaymentsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-        <span className="text-sm text-gray-500">{data?.total ?? 0} total</span>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <span className="text-sm text-gray-500">{data?.total ?? 0} total</span>
+        </div>
+        <button
+          onClick={() => {
+            setEditingPayment(undefined);
+            setModalOpen(true);
+          }}
+          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+        >
+          Record Payment
+        </button>
       </div>
 
       {payments.length === 0 ? (
@@ -34,10 +49,16 @@ export function PaymentsPage() {
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Application
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reference
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -51,10 +72,24 @@ export function PaymentsPage() {
                     ${payment.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.application_id ? `#${payment.application_id}` : '—'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {payment.reference || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(payment.payment_date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => {
+                        setEditingPayment(payment);
+                        setModalOpen(true);
+                      }}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -83,6 +118,10 @@ export function PaymentsPage() {
             </div>
           )}
         </div>
+      )}
+
+      {modalOpen && (
+        <PaymentFormModal payment={editingPayment} onClose={() => setModalOpen(false)} />
       )}
     </div>
   );

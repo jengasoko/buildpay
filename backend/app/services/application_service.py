@@ -36,10 +36,15 @@ def get_application(db: Session, application_id: int) -> ApplicationResponse:
     return ApplicationResponse.model_validate(application)
 
 
-def list_applications(db: Session, page: int = 1, page_size: int = 100) -> dict:
+def list_applications(
+    db: Session,
+    page: int = 1,
+    page_size: int = 100,
+    status: ApplicationStatus | None = None,
+) -> dict:
     skip = (page - 1) * page_size
-    applications = application_repository.get_applications(db, skip=skip, limit=page_size)
-    total = application_repository.count_applications(db)
+    applications = application_repository.get_applications(db, skip=skip, limit=page_size, status=status)
+    total = application_repository.count_applications(db, status=status)
     return {
         "items": [ApplicationResponse.model_validate(a) for a in applications],
         "total": total,

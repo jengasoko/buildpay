@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_role
 from app.core.database import get_db
-from app.models import User, UserRole
+from app.models import ApplicationStatus, User, UserRole
 from app.schemas import (
     ApplicationCreate,
     ApplicationResponse,
@@ -136,10 +136,11 @@ def create_application(
 def list_applications(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
+    status: ApplicationStatus | None = Query(None),
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_role(*UserRole)),
 ):
-    return application_service.list_applications(db, page=page, page_size=page_size)
+    return application_service.list_applications(db, page=page, page_size=page_size, status=status)
 
 
 @router.get("/applications/{application_id}", response_model=ApplicationResponse)

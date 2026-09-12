@@ -28,6 +28,24 @@ export interface Project {
   created_at: string;
 }
 
+export interface ProjectCreate {
+  name: string;
+  location: string;
+  description?: string;
+  start_date: string;
+  expected_completion: string;
+  actual_completion?: string;
+}
+
+export interface ProjectUpdate {
+  name?: string;
+  location?: string;
+  description?: string;
+  start_date?: string;
+  expected_completion?: string;
+  actual_completion?: string;
+}
+
 export interface House {
   id: number;
   project_id: number | null;
@@ -43,6 +61,32 @@ export interface House {
   created_at: string;
 }
 
+export interface HouseCreate {
+  project_id?: number;
+  title: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area_sqft?: number;
+  location: string;
+  rent_price: number;
+  price?: number;
+  image_url?: string;
+  available?: boolean;
+}
+
+export interface HouseUpdate {
+  project_id?: number;
+  title?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area_sqft?: number;
+  location?: string;
+  rent_price?: number;
+  price?: number;
+  image_url?: string;
+  available?: boolean;
+}
+
 export type ApplicationStatus =
   | 'PENDING'
   | 'EMPLOYER_APPROVED'
@@ -55,6 +99,17 @@ export interface Application {
   house_id: number;
   status: ApplicationStatus;
   created_at: string;
+  house_title: string;
+  employee_username: string;
+}
+
+export interface ApplicationCreate {
+  employee_id: number;
+  house_id: number;
+}
+
+export interface ApplicationUpdate {
+  status: ApplicationStatus;
 }
 
 export interface Payment {
@@ -81,6 +136,7 @@ export interface LoginRequest {
 export interface QueryParams {
   page?: number;
   page_size?: number;
+  available_only?: boolean;
 }
 
 export interface LoginResponse {
