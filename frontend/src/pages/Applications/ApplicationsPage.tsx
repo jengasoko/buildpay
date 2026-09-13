@@ -5,6 +5,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/Toast';
 import type { Application, ApplicationStatus, UserRole } from '@/types/api';
 import { getApiErrorMessage } from '@/services/api';
 
@@ -52,6 +53,7 @@ const approveTarget: Record<ApplicationStatus, ApplicationStatus> = {
 
 export function ApplicationsPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<ApplicationStatus | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
@@ -75,8 +77,11 @@ export function ApplicationsPage() {
     setActionError('');
     try {
       await updateMutation.mutateAsync({ id: application.id, data: { status: next } });
+      toast.success(`Application marked as ${STATUS_LABELS[next]}`);
     } catch (err) {
-      setActionError(getApiErrorMessage(err));
+      const message = getApiErrorMessage(err);
+      setActionError(message);
+      toast.error(message);
     }
   };
 

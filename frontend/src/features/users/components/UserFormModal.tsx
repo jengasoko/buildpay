@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateUser, useUpdateUser } from '../hooks/useUsers';
+import { useToast } from '@/components/ui/Toast';
 import type { User, UserRole } from '@/types/api';
 import { getApiErrorMessage } from '@/services/api';
 
@@ -47,6 +48,7 @@ const inputClass =
 export function UserFormModal({ user, onClose }: UserFormModalProps) {
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
+  const toast = useToast();
 
   const isCreate = !user;
 
@@ -76,31 +78,41 @@ export function UserFormModal({ user, onClose }: UserFormModalProps) {
   const clean = (v: string | undefined) => (v && v.trim() ? v.trim() : undefined);
 
   const onCreateSubmit = async (data: CreateFormData) => {
-    await createMutation.mutateAsync({
-      username: data.username,
-      email: data.email,
-      password: data.password,
-      role: data.role,
-      first_name: clean(data.first_name),
-      last_name: clean(data.last_name),
-      phone: clean(data.phone),
-    });
-    onClose();
+    try {
+      await createMutation.mutateAsync({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        first_name: clean(data.first_name),
+        last_name: clean(data.last_name),
+        phone: clean(data.phone),
+      });
+      toast.success('User created');
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
   };
 
   const onEditSubmit = async (data: EditFormData) => {
     if (!user) return;
-    await updateMutation.mutateAsync({
-      id: user.id,
-      data: {
-        first_name: clean(data.first_name),
-        last_name: clean(data.last_name),
-        phone: clean(data.phone),
-        role: data.role,
-        is_active: data.is_active,
-      },
-    });
-    onClose();
+    try {
+      await updateMutation.mutateAsync({
+        id: user.id,
+        data: {
+          first_name: clean(data.first_name),
+          last_name: clean(data.last_name),
+          phone: clean(data.phone),
+          role: data.role,
+          is_active: data.is_active,
+        },
+      });
+      toast.success('User updated');
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
   };
 
   return (

@@ -28,9 +28,9 @@ MANAGER_ROLES = (UserRole.ADMIN, UserRole.PROJECT_MANAGER)
 def create_project(
     data: ProjectCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    return project_service.create_project(db, data)
+    return project_service.create_project(db, data, current_user=current_user)
 
 
 @router.get("/projects", response_model=PaginatedResponse)
@@ -57,18 +57,18 @@ def update_project(
     project_id: int,
     data: ProjectUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    return project_service.update_project(db, project_id, data)
+    return project_service.update_project(db, project_id, data, current_user=current_user)
 
 
 @router.delete("/projects/{project_id}", status_code=204)
 def delete_project(
     project_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    project_service.delete_project(db, project_id)
+    project_service.delete_project(db, project_id, current_user=current_user)
     return None
 
 
@@ -77,9 +77,9 @@ def delete_project(
 def create_house(
     data: HouseCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    return house_service.create_house(db, data)
+    return house_service.create_house(db, data, current_user=current_user)
 
 
 @router.get("/houses", response_model=PaginatedResponse)
@@ -107,18 +107,18 @@ def update_house(
     house_id: int,
     data: HouseUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    return house_service.update_house(db, house_id, data)
+    return house_service.update_house(db, house_id, data, current_user=current_user)
 
 
 @router.delete("/houses/{house_id}", status_code=204)
 def delete_house(
     house_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*MANAGER_ROLES)),
+    current_user: User = Depends(require_role(*MANAGER_ROLES)),
 ):
-    house_service.delete_house(db, house_id)
+    house_service.delete_house(db, house_id, current_user=current_user)
     return None
 
 
@@ -138,18 +138,20 @@ def list_applications(
     page_size: int = Query(100, ge=1, le=500),
     status: ApplicationStatus | None = Query(None),
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*UserRole)),
+    current_user: User = Depends(require_role(*UserRole)),
 ):
-    return application_service.list_applications(db, page=page, page_size=page_size, status=status)
+    return application_service.list_applications(
+        db, page=page, page_size=page_size, status=status, current_user=current_user
+    )
 
 
 @router.get("/applications/{application_id}", response_model=ApplicationResponse)
 def get_application(
     application_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*UserRole)),
+    current_user: User = Depends(require_role(*UserRole)),
 ):
-    return application_service.get_application(db, application_id)
+    return application_service.get_application(db, application_id, current_user=current_user)
 
 
 # --- Application status workflow ---

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { projectFormSchema, type ProjectFormData } from '../validation';
 import { useCreateProject, useUpdateProject } from '../hooks/useProjects';
+import { useToast } from '@/components/ui/Toast';
 import type { Project } from '@/types/api';
 
 interface ProjectFormModalProps {
@@ -20,6 +21,7 @@ export function ProjectFormModal({ project, onClose }: ProjectFormModalProps) {
   const isEdit = Boolean(project);
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
+  const toast = useToast();
 
   const {
     register,
@@ -57,12 +59,18 @@ export function ProjectFormModal({ project, onClose }: ProjectFormModalProps) {
       description: data.description || undefined,
       actual_completion: data.actual_completion || undefined,
     };
-    if (isEdit && project) {
-      await updateMutation.mutateAsync({ id: project.id, data: payload });
-    } else {
-      await createMutation.mutateAsync(payload);
+    try {
+      if (isEdit && project) {
+        await updateMutation.mutateAsync({ id: project.id, data: payload });
+        toast.success('Project updated');
+      } else {
+        await createMutation.mutateAsync(payload);
+        toast.success('Project created');
+      }
+      onClose();
+    } catch {
+      toast.error('Something went wrong. Please try again.');
     }
-    onClose();
   };
 
   const isBusy = isSubmitting || createMutation.isPending || updateMutation.isPending;

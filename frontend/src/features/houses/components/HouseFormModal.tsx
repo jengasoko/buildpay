@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { houseFormSchema, type HouseFormData } from '../validation';
 import { useCreateHouse, useUpdateHouse } from '../hooks/useHouses';
 import { useProjects } from '@/features/projects/hooks/useProjects';
+import { useToast } from '@/components/ui/Toast';
 import type { House } from '@/types/api';
 
 interface HouseFormModalProps {
@@ -19,6 +20,7 @@ export function HouseFormModal({ house, onClose }: HouseFormModalProps) {
   const createMutation = useCreateHouse();
   const updateMutation = useUpdateHouse();
   const { data: projectsData } = useProjects({ page: 1, page_size: 500 });
+  const toast = useToast();
 
   const {
     register,
@@ -64,12 +66,18 @@ export function HouseFormModal({ house, onClose }: HouseFormModalProps) {
       image_url: data.image_url || undefined,
       project_id: data.project_id ? Number(data.project_id) : undefined,
     };
-    if (isEdit && house) {
-      await updateMutation.mutateAsync({ id: house.id, data: payload });
-    } else {
-      await createMutation.mutateAsync(payload);
+    try {
+      if (isEdit && house) {
+        await updateMutation.mutateAsync({ id: house.id, data: payload });
+        toast.success('House updated');
+      } else {
+        await createMutation.mutateAsync(payload);
+        toast.success('House created');
+      }
+      onClose();
+    } catch {
+      toast.error('Something went wrong. Please try again.');
     }
-    onClose();
   };
 
   const isBusy = isSubmitting || createMutation.isPending || updateMutation.isPending;

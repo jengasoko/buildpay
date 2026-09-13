@@ -1,13 +1,37 @@
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Application, ApplicationStatus
+from app.models import Application, ApplicationStatus, Employment, User
+
+ACTIVE_STATUSES = (ApplicationStatus.PENDING, ApplicationStatus.EMPLOYER_APPROVED)
+
+
+def _with_employment(query):
+    return query.options(
+        joinedload(Application.house),
+        joinedload(Application.employee).joinedload(User.employment_as_employee).joinedload(Employment.employer),
+    )
 
 
 def get_application_by_id(db: Session, application_id: int) -> Application | None:
+    return _with_employment(db.query(Application)).filter(Application.id == application_id).first()
+
+
+def get_active_application_by_house(db: Session, employee_id: int, house_id: int) -> Application | None:
     return (
         db.query(Application)
-        .options(joinedload(Application.house), joinedload(Application.employee))
-        .filter(Application.id == application_id)
+        .filter(
+            Application.employee_id == employee_id,
+            Application.house_id == house_id,
+            Application.status.in_(ACTIVE_STATUSES),
+        )
+        .first()
+    )
+
+
+def get_active_application_by_employee(db: Session, employee_id: int) -> Application | None:
+    return (
+        db.query(Application)
+        .filter(Application.employee_id == employee_id, Application.status.in_(ACTIVE_STATUSES))
         .first()
     )
 
@@ -17,24 +41,36 @@ def get_applications(
     skip: int = 0,
     limit: int = 100,
     status: ApplicationStatus | None = None,
+    employee_id: int | None = None,
+    team_ids: list[int] | None = None,
 ) -> list[Application]:
-    query = db.query(Application).options(
-        joinedload(Application.house),
-        joinedload(Application.employee),
-    )
+    query = _with_employment(db.query(Application))
     if status is not None:
         query = query.filter(Application.status == status)
-    return query.offset(skip).limit(limit).all()
+    if employee_id is not None:
+        query = query.filter(Application.employee_id == employee_id)
+    if team_ids is not None:
+        query = query.filter(Application.employee_id.in_(team_ids))
+    return query.order_by(Application.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def get_applications_by_employee(db: Session, employee_id: int) -> list[Application]:
     return db.query(Application).filter(Application.employee_id == employee_id).all()
 
 
-def count_applications(db: Session, status: ApplicationStatus | None = None) -> int:
+def count_applications(
+    db: Session,
+    status: ApplicationStatus | None = None,
+    employee_id: int | None = None,
+    team_ids: list[int] | None = None,
+) -> int:
     query = db.query(Application)
     if status is not None:
         query = query.filter(Application.status == status)
+    if employee_id is not None:
+        query = query.filter(Application.employee_id == employee_id)
+    if team_ids is not None:
+        query = query.filter(Application.employee_id.in_(team_ids))
     return query.count()
 
 

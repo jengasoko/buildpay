@@ -2,8 +2,10 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import BadRequestException, ConflictException, NotFoundException
 from app.core.security import create_access_token, hash_password, verify_password
+from app.models import User
 from app.repositories import user_repository
 from app.schemas import LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate
+from app.services.logs import log_event
 
 
 def register_user(db: Session, data: UserCreate) -> UserResponse:
@@ -15,6 +17,14 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
     user_data = data.model_dump()
     user_data["hashed_password"] = hash_password(user_data.pop("password"))
     user = user_repository.create_user(db, user_data)
+    log_event(
+        db,
+        action="USER.REGISTERED",
+        entity_type="USER",
+        entity_id=user.id,
+        details={"username": user.username, "role": user.role.value},
+        user_id=user.id,
+    )
     return UserResponse.model_validate(user)
 
 
@@ -48,10 +58,21 @@ def list_users(db: Session, page: int = 1, page_size: int = 100) -> dict:
     }
 
 
-def update_user(db: Session, user_id: int, data: UserUpdate) -> UserResponse:
+def update_user(db: Session, user_id: int, data: UserUpdate, current_user: User | None = None) -> UserResponse:
     user = user_repository.get_user_by_id(db, user_id)
     if not user:
         raise NotFoundException("User")
     update_data = data.model_dump(exclude_unset=True)
+    details = {"updated": list(update_data.keys())}
+    if "role" in update_data and user.role != update_data["role"]:
+        details["role_changed"] = {"from": user.role.value, "to": update_data["role"].value}
     updated = user_repository.update_user(db, user, update_data)
+    log_event(
+        db,
+        action="USER.UPDATED",
+        entity_type="USER",
+        entity_id=user_id,
+        details=details,
+        user_id=current_user.id if current_user else None,
+    )
     return UserResponse.model_validate(updated)

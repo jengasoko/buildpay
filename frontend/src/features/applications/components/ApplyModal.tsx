@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { useCreateApplication } from '../hooks/useApplications';
 import { useHouses } from '@/features/houses/hooks/useHouses';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/Toast';
+import { getApiErrorMessage } from '@/services/api';
 
 interface ApplyModalProps {
   onClose: () => void;
@@ -21,6 +23,7 @@ const inputClass =
 export function ApplyModal({ onClose }: ApplyModalProps) {
   const { user } = useAuth();
   const createMutation = useCreateApplication();
+  const toast = useToast();
   const { data: housesData, isLoading: housesLoading } = useHouses({
     page: 1,
     page_size: 500,
@@ -38,11 +41,16 @@ export function ApplyModal({ onClose }: ApplyModalProps) {
 
   const onSubmit = async (data: ApplyFormData) => {
     if (!user) return;
-    await createMutation.mutateAsync({
-      employee_id: user.id,
-      house_id: Number(data.house_id),
-    });
-    onClose();
+    try {
+      await createMutation.mutateAsync({
+        employee_id: user.id,
+        house_id: Number(data.house_id),
+      });
+      toast.success('Application submitted');
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
   };
 
   const isBusy = isSubmitting || createMutation.isPending;

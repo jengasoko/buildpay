@@ -1,23 +1,49 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useUsers, useUpdateUser } from '@/features/users/hooks/useUsers';
+import { useCreateEmployment, useDeleteEmployment, useEmployments } from '@/features/employments/hooks/useEmployments';
 import { UserFormModal } from '@/features/users/components/UserFormModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useToast } from '@/components/ui/Toast';
+import { getApiErrorMessage } from '@/services/api';
 import type { User } from '@/types/api';
 
 export function UsersPage() {
+  const toast = useToast();
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const [actionError, setActionError] = useState('');
   const { data, isLoading, error, refetch } = useUsers(page, 20);
+  const employments = useEmployments(1, 100);
   const updateMutation = useUpdateUser();
+  const createEmployment = useCreateEmployment();
+  const deleteEmployment = useDeleteEmployment();
 
   if (isLoading) return <LoadingSpinner message="Loading users..." />;
   if (error) return <ErrorMessage message="Failed to load users." onRetry={() => refetch()} />;
 
   const users = data?.items ?? [];
+  const employers = users.filter((u) => u.role === 'EMPLOYER');
+
+  const handleEmployerChange = async (user: User, employerId: number) => {
+    setActionError('');
+    try {
+      const employment = employments.data?.items.find((e) => e.employee_id === user.id);
+      if (employment) {
+        await deleteEmployment.mutateAsync(employment.id);
+      }
+      if (employerId > 0) {
+        await createEmployment.mutateAsync({ employer_id: employerId, employee_id: user.id });
+      }
+      toast.success(employerId > 0 ? 'Employer assignment updated' : 'Employer assignment removed');
+    } catch (err) {
+      const message = getApiErrorMessage(err);
+      setActionError(message);
+      toast.error(message);
+    }
+  };
 
   const openCreate = () => {
     setEditingUser(undefined);
@@ -36,8 +62,11 @@ export function UsersPage() {
         id: user.id,
         data: { is_active: !user.is_active },
       });
-    } catch {
-      setActionError('Failed to update user status.');
+      toast.success(user.is_active ? 'User deactivated' : 'User activated');
+    } catch (err) {
+      const message = getApiErrorMessage(err);
+      setActionError(message);
+      toast.error(message);
     }
   };
 
@@ -79,6 +108,9 @@ export function UsersPage() {
                   Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Employer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -97,6 +129,29 @@ export function UsersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user.role.replace('_', ' ')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.role === 'EMPLOYEE' ? (
+                      <select
+                        value={user.employer_id ?? 0}
+                        disabled={createEmployment.isPending || deleteEmployment.isPending}
+                        onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                          handleEmployerChange(user, Number(e.target.value))
+                        }
+                        className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white disabled:opacity-50"
+                      >
+                        <option value={0}>Unassigned</option>
+                        {employers.map((employer) => (
+                          <option key={employer.id} value={employer.id}>
+                            {employer.username}
+                          </option>
+                        ))}
+                      </select>
+                    ) : user.employer_username ? (
+                      user.employer_username
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button

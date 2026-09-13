@@ -5,12 +5,14 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/Toast';
 import type { House } from '@/types/api';
 
 const PAGE_SIZE = 20;
 
 export function HousesPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [page, setPage] = useState(1);
   const [availableOnly, setAvailableOnly] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,8 +45,9 @@ export function HousesPage() {
     if (!window.confirm(`Delete house "${house.title}"? This cannot be undone.`)) return;
     try {
       await deleteMutation.mutateAsync(house.id);
+      toast.success('House deleted');
     } catch {
-      window.alert('Failed to delete house. Please try again.');
+      toast.error('Failed to delete house. Please try again.');
     }
   };
 

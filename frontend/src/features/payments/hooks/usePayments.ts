@@ -11,6 +11,13 @@ export function usePayments(params?: QueryParams) {
   });
 }
 
+export function useMyPayments(params?: QueryParams) {
+  return useQuery({
+    queryKey: ['payments', 'mine', params],
+    queryFn: () => paymentsApi.getMy(params).then((r) => r.data),
+  });
+}
+
 export function usePayment(id: number) {
   return useQuery({
     queryKey: ['payments', id],

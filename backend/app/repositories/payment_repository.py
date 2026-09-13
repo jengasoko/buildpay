@@ -1,10 +1,15 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Payment
+from app.models import Application, Payment
 
 
 def get_payment_by_id(db: Session, payment_id: int) -> Payment | None:
-    return db.query(Payment).filter(Payment.id == payment_id).first()
+    return (
+        db.query(Payment)
+        .options(joinedload(Payment.application).joinedload(Application.house))
+        .filter(Payment.id == payment_id)
+        .first()
+    )
 
 
 def get_payment_by_reference(db: Session, reference: str) -> Payment | None:
@@ -12,7 +17,37 @@ def get_payment_by_reference(db: Session, reference: str) -> Payment | None:
 
 
 def get_payments(db: Session, skip: int = 0, limit: int = 100) -> list[Payment]:
-    return db.query(Payment).offset(skip).limit(limit).all()
+    return (
+        db.query(Payment)
+        .options(
+            joinedload(Payment.application).joinedload(Application.house),
+            joinedload(Payment.application).joinedload(Application.employee),
+        )
+        .order_by(Payment.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_payments_by_employee(db: Session, employee_id: int, skip: int = 0, limit: int = 100) -> list[Payment]:
+    return (
+        db.query(Payment)
+        .join(Payment.application)
+        .options(
+            joinedload(Payment.application).joinedload(Application.house),
+            joinedload(Payment.application).joinedload(Application.employee),
+        )
+        .filter(Application.employee_id == employee_id)
+        .order_by(Payment.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def count_payments_by_employee(db: Session, employee_id: int) -> int:
+    return db.query(Payment).join(Payment.application).filter(Application.employee_id == employee_id).count()
 
 
 def count_payments(db: Session) -> int:

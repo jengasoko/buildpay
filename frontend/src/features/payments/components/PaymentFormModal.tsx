@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreatePayment, useUpdatePayment } from '../hooks/usePayments';
 import { useApplications } from '@/features/applications/hooks/useApplications';
+import { useToast } from '@/components/ui/Toast';
 import type { Payment } from '@/types/api';
 import { getApiErrorMessage } from '@/services/api';
 
@@ -26,6 +27,7 @@ export function PaymentFormModal({ payment, onClose }: PaymentFormModalProps) {
   const createMutation = useCreatePayment();
   const updateMutation = useUpdatePayment();
   const { data: applicationsData } = useApplications({ page: 1, page_size: 500 });
+  const toast = useToast();
 
   const isCreate = !payment;
 
@@ -52,22 +54,28 @@ export function PaymentFormModal({ payment, onClose }: PaymentFormModalProps) {
   const onSubmit = async (data: PaymentFormData) => {
     const application_id = data.application_id ? Number(data.application_id) : undefined;
     const reference = data.reference && data.reference.trim() ? data.reference.trim() : undefined;
-    if (isCreate) {
-      await createMutation.mutateAsync({
-        application_id,
-        amount: Number(data.amount),
-        reference,
-      });
-    } else {
-      await updateMutation.mutateAsync({
-        id: payment.id,
-        data: {
+    try {
+      if (isCreate) {
+        await createMutation.mutateAsync({
+          application_id,
           amount: Number(data.amount),
           reference,
-        },
-      });
+        });
+        toast.success('Payment recorded successfully');
+      } else {
+        await updateMutation.mutateAsync({
+          id: payment.id,
+          data: {
+            amount: Number(data.amount),
+            reference,
+          },
+        });
+        toast.success(`Payment #${payment.id} updated`);
+      }
+      onClose();
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
     }
-    onClose();
   };
 
   const applications = applicationsData?.items ?? [];

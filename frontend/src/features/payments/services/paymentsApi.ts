@@ -4,6 +4,8 @@ import type { PaginatedResponse, Payment, PaymentCreate, PaymentUpdate, QueryPar
 export const paymentsApi = {
   list: (params?: QueryParams) =>
     apiClient.get<PaginatedResponse<Payment>>('/api/v1/payments/', { params }),
+  getMy: (params?: QueryParams) =>
+    apiClient.get<PaginatedResponse<Payment>>('/api/v1/payments/my-payments', { params }),
   get: (id: number) => apiClient.get<Payment>(`/api/v1/payments/${id}`),
   create: (data: PaymentCreate) => apiClient.post<Payment>('/api/v1/payments/', data),
   update: (id: number, data: PaymentUpdate) =>

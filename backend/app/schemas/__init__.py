@@ -45,6 +45,8 @@ class UserResponse(BaseModel):
     phone: str | None
     is_active: bool
     created_at: datetime
+    employer_id: int | None = None
+    employer_username: str = ""
 
     model_config = {"from_attributes": True}
 
@@ -55,6 +57,8 @@ class UserListResponse(BaseModel):
     email: str
     role: UserRole
     is_active: bool
+    employer_id: int | None = None
+    employer_username: str = ""
 
     model_config = {"from_attributes": True}
 
@@ -153,6 +157,7 @@ class ApplicationResponse(BaseModel):
     created_at: datetime
     house_title: str
     employee_username: str
+    employer_username: str = ""
 
     model_config = {"from_attributes": True}
 
@@ -165,6 +170,7 @@ class PaymentCreate(BaseModel):
 
 
 class PaymentUpdate(BaseModel):
+    application_id: int | None = None
     amount: float | None = None
     reference: str | None = None
 
@@ -176,6 +182,8 @@ class PaymentResponse(BaseModel):
     payment_date: datetime
     reference: str | None
     created_at: datetime
+    application_house_title: str = ""
+    application_employee_username: str = ""
 
     model_config = {"from_attributes": True}
 
@@ -194,6 +202,96 @@ class ReadyResponse(BaseModel):
 # --- Error ---
 class ErrorResponse(BaseModel):
     error: dict
+
+
+# --- System Log ---
+class SystemLogResponse(BaseModel):
+    id: int
+    user_id: int | None
+    action: str
+    entity_type: str | None
+    entity_id: int | None
+    details: str | None
+    timestamp: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Employment ---
+class EmploymentCreate(BaseModel):
+    employer_id: int
+    employee_id: int
+
+
+class EmploymentResponse(BaseModel):
+    id: int
+    employer_id: int
+    employee_id: int
+    created_at: datetime
+    employer_username: str = ""
+    employee_username: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+# --- Occupancy ---
+class OccupancyResponse(BaseModel):
+    id: int
+    application_id: int
+    house_id: int
+    employee_id: int
+    started_at: datetime
+    ended_at: datetime | None
+    house_title: str = ""
+    employee_username: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+# --- Notification ---
+class NotificationCreate(BaseModel):
+    user_id: int
+    title: str
+    message: str
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class NotificationUnreadCount(BaseModel):
+    count: int
+
+
+# --- Dashboard ---
+class DashboardCounts(BaseModel):
+    users: int
+    employees: int
+    employers: int
+    projects: int
+    houses: int
+    available_houses: int
+    occupied_houses: int
+    applications: int
+    pending_applications: int
+    employer_approved_applications: int
+    financial_approved_applications: int
+    rejected_applications: int
+    payments: int
+    active_occupancies: int
+
+
+class DashboardStatsResponse(BaseModel):
+    counts: DashboardCounts
+    total_payment_amount: float
+    recent_applications: list[ApplicationResponse]
 
 
 # --- Pagination ---

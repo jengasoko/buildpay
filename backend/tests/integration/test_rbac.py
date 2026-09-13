@@ -1,4 +1,3 @@
-
 from app.core.security import hash_password
 from app.models import House, User
 
@@ -136,11 +135,15 @@ class TestPaymentPermissions:
 
 class TestApplicationWorkflow:
     def _seed(self, client, db_session):
+        from app.models import Employment
+
         employee = _create_user(db_session, "wf_emp", "EMPLOYEE")
         employer = _create_user(db_session, "wf_employer", "EMPLOYER")
         officer = _create_user(db_session, "wf_fo", "FINANCIAL_OFFICER")
         house = House(title="Unit 101", location="Block A", rent_price=800.00)
         db_session.add(house)
+        assignment = Employment(employer_id=employer.id, employee_id=employee.id)
+        db_session.add(assignment)
         db_session.commit()
         return employee, employer, officer, house
 
