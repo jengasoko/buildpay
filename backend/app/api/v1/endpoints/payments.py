@@ -16,9 +16,19 @@ FINANCIAL_ROLES = (UserRole.ADMIN, UserRole.FINANCIAL_OFFICER)
 def create_payment(
     data: PaymentCreate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*FINANCIAL_ROLES)),
+    current_user: User = Depends(require_role(*FINANCIAL_ROLES)),
 ):
-    return payment_service.create_payment(db, data)
+    return payment_service.create_payment(db, data, current_user=current_user)
+
+
+@router.get("/my-payments", response_model=PaginatedResponse)
+def list_my_payments(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.EMPLOYEE)),
+):
+    return payment_service.list_my_payments(db, current_user, page=page, page_size=page_size)
 
 
 @router.get("/", response_model=PaginatedResponse)
@@ -45,6 +55,6 @@ def update_payment(
     payment_id: int,
     data: PaymentUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*FINANCIAL_ROLES)),
+    current_user: User = Depends(require_role(*FINANCIAL_ROLES)),
 ):
-    return payment_service.update_payment(db, payment_id, data)
+    return payment_service.update_payment(db, payment_id, data, current_user=current_user)

@@ -39,6 +39,6 @@ def update_user(
     user_id: int,
     data: UserUpdate,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(UserRole.ADMIN)),
+    current_user: User = Depends(require_role(UserRole.ADMIN)),
 ):
-    return user_service.update_user(db, user_id, data)
+    return user_service.update_user(db, user_id, data, current_user=current_user)

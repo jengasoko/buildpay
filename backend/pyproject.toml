@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "hms-backend"
@@ -59,3 +59,8 @@ omit = ["tests/*", "scripts/*"]
 [tool.coverage.report]
 show_missing = true
 fail_under = 70
+
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["tests*", "alembic*"]

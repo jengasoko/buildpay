@@ -18,7 +18,7 @@ def count_projects(db: Session) -> int:
 def create_project(db: Session, project_data: dict) -> Project:
     project = Project(**project_data)
     db.add(project)
-    db.commit()
+    db.flush()
     db.refresh(project)
     return project
 
@@ -26,11 +26,11 @@ def create_project(db: Session, project_data: dict) -> Project:
 def update_project(db: Session, project: Project, update_data: dict) -> Project:
     for key, value in update_data.items():
         setattr(project, key, value)
-    db.commit()
+    db.flush()
     db.refresh(project)
     return project
 
 
 def delete_project(db: Session, project: Project) -> None:
     db.delete(project)
-    db.commit()
+    db.flush()

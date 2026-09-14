@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { authApi } from '@/features/auth/services/authApi';
 import { loginSchema, type LoginFormData } from '@/features/auth/validation';
@@ -84,6 +85,13 @@ export function LoginPage() {
           >
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>
+
+          <p className="text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Create one
+            </Link>
+          </p>
         </form>
       </div>
     </div>

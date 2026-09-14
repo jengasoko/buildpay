@@ -1,5 +1,10 @@
 from app.services import application_service as application_service  # noqa: F401
+from app.services import dashboard_service as dashboard_service  # noqa: F401
+from app.services import employment_service as employment_service  # noqa: F401
 from app.services import house_service as house_service  # noqa: F401
+from app.services import logs as logs  # noqa: F401
+from app.services import notification_service as notification_service  # noqa: F401
+from app.services import occupancy_service as occupancy_service  # noqa: F401
 from app.services import payment_service as payment_service  # noqa: F401
 from app.services import project_service as project_service  # noqa: F401
 from app.services import user_service as user_service  # noqa: F401
