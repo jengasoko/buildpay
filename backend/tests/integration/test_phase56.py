@@ -137,9 +137,7 @@ class TestBillingInvoices:
     def test_payment_allocation_partial_then_paid(self, client, db_session):
         _, _, _, house, lease, p = _setup_full(client, db_session, "E")
         ot = _login(client, f"{p}_officer")
-        inv = client.post(
-            f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)
-        ).json()
+        inv = client.post(f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)).json()
         invoice_id = inv["id"]
 
         partial = client.post(
@@ -168,9 +166,7 @@ class TestBillingInvoices:
     def test_overpayment_rejected(self, client, db_session):
         _, _, _, house, lease, p = _setup_full(client, db_session, "F")
         ot = _login(client, f"{p}_officer")
-        inv = client.post(
-            f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)
-        ).json()
+        inv = client.post(f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)).json()
         overpay = client.post(
             "/api/v1/payments/",
             json={"invoice_id": inv["id"], "amount": inv["total_amount"] + 500, "reference": f"{p}-O"},
@@ -197,9 +193,7 @@ class TestArrearsAndStatements:
     def test_arrears_aging_buckets(self, client, db_session):
         _, _, _, house, lease, p = _setup_full(client, db_session, "H")
         ot = _login(client, f"{p}_officer")
-        inv = client.post(
-            f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)
-        ).json()
+        inv = client.post(f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)).json()
 
         invoice = db_session.query(Invoice).filter(Invoice.id == inv["id"]).first()
         invoice.due_date = datetime.now(UTC) - timedelta(days=45)
@@ -216,9 +210,7 @@ class TestArrearsAndStatements:
     def test_statement_of_account(self, client, db_session):
         _, _, _, house, lease, p = _setup_full(client, db_session, "I")
         ot = _login(client, f"{p}_officer")
-        inv = client.post(
-            f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)
-        ).json()
+        inv = client.post(f"/api/v1/leases/{lease['id']}/generate-invoice", headers=_auth(ot)).json()
         client.post(
             "/api/v1/payments/",
             json={"invoice_id": inv["id"], "amount": 300.0, "reference": f"{p}-S"},
@@ -255,8 +247,10 @@ class TestMaintenanceWorkflow:
         created = client.post(
             "/api/v1/maintenance-requests",
             json={
-                "house_id": house.id, "category": "PLUMBING",
-                "title": "Leaking tap", "description": "Kitchen tap leaks",
+                "house_id": house.id,
+                "category": "PLUMBING",
+                "title": "Leaking tap",
+                "description": "Kitchen tap leaks",
                 "priority": "high",
             },
             headers=_auth(_login(client, emp)),

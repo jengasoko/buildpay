@@ -46,6 +46,8 @@ def allocate_payment(
 @router.get("/arrears", response_model=ArrearsSummary)
 def arrears(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.FINANCIAL_OFFICER, UserRole.PROJECT_MANAGER, UserRole.EMPLOYER)),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN, UserRole.FINANCIAL_OFFICER, UserRole.PROJECT_MANAGER, UserRole.EMPLOYER)
+    ),
 ):
     return billing_service.arrears_summary(db, current_user)

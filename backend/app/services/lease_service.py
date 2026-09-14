@@ -11,9 +11,7 @@ from app.services.logs import log_event
 FINANCE_ROLES = (UserRole.ADMIN, UserRole.FINANCIAL_OFFICER, UserRole.PROJECT_MANAGER)
 
 
-def create_lease_from_occupancy(
-    db: Session, occupancy_id: int, *, current_user: User | None = None
-) -> LeaseResponse:
+def create_lease_from_occupancy(db: Session, occupancy_id: int, *, current_user: User | None = None) -> LeaseResponse:
     """Creates the tenancy record for a financially-approved application."""
     occupancy = occupancy_repository.get_occupancy_by_id(db, occupancy_id)
     if not occupancy:
@@ -124,7 +122,11 @@ def _assert_can_view(db: Session, lease: Lease, current_user: User | None) -> No
 
 
 def list_leases(
-    db: Session, page: int = 1, page_size: int = 100, status: LeaseStatus | None = None, current_user: User | None = None
+    db: Session,
+    page: int = 1,
+    page_size: int = 100,
+    status: LeaseStatus | None = None,
+    current_user: User | None = None,
 ) -> dict:
     employee_ids = None
     if current_user is not None and current_user.role == UserRole.EMPLOYER:

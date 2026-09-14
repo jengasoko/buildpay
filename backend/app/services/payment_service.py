@@ -48,7 +48,9 @@ def _allocate_payment(db: Session, data: PaymentCreate, current_user: User | Non
     new_paid = round(float(invoice.paid_amount) + data.amount, 2)
     invoice_repository.update_invoice(db, invoice, {"paid_amount": new_paid})
     balance_after = round(float(invoice.total_amount) - new_paid, 2)
-    new_status = InvoiceStatus.PAID if balance_after <= 0 else (InvoiceStatus.PARTIAL if new_paid > 0 else InvoiceStatus.OPEN)
+    new_status = (
+        InvoiceStatus.PAID if balance_after <= 0 else (InvoiceStatus.PARTIAL if new_paid > 0 else InvoiceStatus.OPEN)
+    )
     invoice_repository.update_invoice(db, invoice, {"status": new_status})
 
     if new_status == InvoiceStatus.PAID:

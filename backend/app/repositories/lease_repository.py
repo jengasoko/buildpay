@@ -17,11 +17,7 @@ def get_active_lease_by_employee(db: Session, employee_id: int) -> Lease | None:
 
 
 def get_active_lease_by_occupancy(db: Session, occupancy_id: int) -> Lease | None:
-    return (
-        db.query(Lease)
-        .filter(Lease.occupancy_id == occupancy_id, Lease.status == LeaseStatus.ACTIVE)
-        .first()
-    )
+    return db.query(Lease).filter(Lease.occupancy_id == occupancy_id, Lease.status == LeaseStatus.ACTIVE).first()
 
 
 def get_leases(

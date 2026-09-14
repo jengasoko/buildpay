@@ -154,9 +154,7 @@ def _sync_invoice_status(db: Session, invoice: Invoice) -> Invoice:
     return invoice_repository.update_invoice(db, invoice, {"status": status})
 
 
-def allocate_payment(
-    db: Session, invoice_id: int, data: InvoiceAllocateRequest, current_user: User
-) -> InvoiceResponse:
+def allocate_payment(db: Session, invoice_id: int, data: InvoiceAllocateRequest, current_user: User) -> InvoiceResponse:
     invoice = invoice_repository.get_invoice_by_id(db, invoice_id)
     if not invoice:
         raise NotFoundException("Invoice")
@@ -222,7 +220,11 @@ def get_invoice(db: Session, invoice_id: int, current_user: User | None = None) 
     invoice = invoice_repository.get_invoice_by_id(db, invoice_id)
     if not invoice:
         raise NotFoundException("Invoice")
-    if current_user is not None and current_user.role == UserRole.EMPLOYEE and invoice.lease.employee_id != current_user.id:
+    if (
+        current_user is not None
+        and current_user.role == UserRole.EMPLOYEE
+        and invoice.lease.employee_id != current_user.id
+    ):
         raise ForbiddenException("Employees may only access their own invoices")
     if (
         current_user is not None
@@ -317,7 +319,9 @@ def statement_of_account(db: Session, lease_id: int, current_user: User | None =
         running = round(running + amt, 2)
         statement.append(StatementEntry(date=ts, type=kind, description=desc, amount=amt, running_balance=running))
 
-    return StatementOfAccount(lease=LeaseResponse.model_validate(lease), balance=_open_balance(lease), entries=statement)
+    return StatementOfAccount(
+        lease=LeaseResponse.model_validate(lease), balance=_open_balance(lease), entries=statement
+    )
 
 
 def financial_report(db: Session, year: int, month: int) -> FinancialReport:
@@ -330,9 +334,9 @@ def financial_report(db: Session, year: int, month: int) -> FinancialReport:
 
     arrears = arrears_summary(db)
     active_leases = lease_repository.count_active_leases(db)
-    open_invoices = invoice_repository.count_invoices(db, status=InvoiceStatus.OPEN) + invoice_repository.count_invoices(
-        db, status=InvoiceStatus.PARTIAL
-    )
+    open_invoices = invoice_repository.count_invoices(
+        db, status=InvoiceStatus.OPEN
+    ) + invoice_repository.count_invoices(db, status=InvoiceStatus.PARTIAL)
 
     return FinancialReport(
         month=month,
