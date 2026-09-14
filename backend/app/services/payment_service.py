@@ -4,7 +4,6 @@ from app.core.exceptions import BadRequestException, ConflictException, NotFound
 from app.models import ApplicationStatus, User
 from app.repositories import application_repository, payment_repository
 from app.schemas import PaymentCreate, PaymentResponse, PaymentUpdate
-from app.services import notification_service
 from app.services.logs import log_event
 
 
@@ -27,9 +26,66 @@ def _validate_reference(db: Session, reference: str | None, exclude_payment_id: 
 
 
 def create_payment(db: Session, data: PaymentCreate, current_user: User | None = None) -> PaymentResponse:
+    if data.invoice_id is not None:
+        return _allocate_payment(db, data, current_user)
+    return _create_legacy_payment(db, data, current_user)
+
+
+def _allocate_payment(db: Session, data: PaymentCreate, current_user: User | None = None) -> PaymentResponse:
+    from app.models import InvoiceStatus
+    from app.repositories import invoice_repository
+
+    invoice = invoice_repository.get_invoice_by_id(db, data.invoice_id)
+    if invoice is None:
+        raise NotFoundException("Invoice")
+    balance = float(invoice.total_amount) - float(invoice.paid_amount)
+    if balance <= 0:
+        raise BadRequestException("Invoice is already paid")
+    if data.amount > balance + 1e-9:
+        raise BadRequestException("Payment exceeds the invoice balance")
+
+    _validate_reference(db, data.reference)
+    new_paid = round(float(invoice.paid_amount) + data.amount, 2)
+    invoice_repository.update_invoice(db, invoice, {"paid_amount": new_paid})
+    balance_after = round(float(invoice.total_amount) - new_paid, 2)
+    new_status = InvoiceStatus.PAID if balance_after <= 0 else (InvoiceStatus.PARTIAL if new_paid > 0 else InvoiceStatus.OPEN)
+    invoice_repository.update_invoice(db, invoice, {"status": new_status})
+
+    if new_status == InvoiceStatus.PAID:
+        from app.services import notification_service
+
+        notification_service.notify(
+            db,
+            invoice.lease.employee_id,
+            "Invoice paid",
+            f"Your invoice of ${invoice.total_amount} for {invoice.house_title} is fully paid.",
+        )
+
+    payment = payment_repository.create_payment(
+        db,
+        {
+            "invoice_id": data.invoice_id,
+            "application_id": invoice.lease.occupancy.application_id if invoice.lease.occupancy else None,
+            "amount": data.amount,
+            "method": data.method,
+            "reference": data.reference,
+        },
+    )
+    log_event(
+        db,
+        action="PAYMENT.ALLOCATED",
+        entity_type="INVOICE",
+        entity_id=data.invoice_id,
+        details={"payment_id": payment.id, "amount": data.amount},
+        user_id=current_user.id if current_user else None,
+    )
+    return PaymentResponse.model_validate(payment)
+
+
+def _create_legacy_payment(db: Session, data: PaymentCreate, current_user: User | None = None) -> PaymentResponse:
     _validate_application(db, data.application_id)
     _validate_reference(db, data.reference)
-    payment = payment_repository.create_payment(db, data.model_dump())
+    payment = payment_repository.create_payment(db, data.model_dump(exclude={"invoice_id"}))
     log_event(
         db,
         action="PAYMENT.CREATED",
@@ -47,6 +103,8 @@ def create_payment(db: Session, data: PaymentCreate, current_user: User | None =
         if application is not None and application.employee_id is not None:
             employee = db.query(User).filter(User.id == application.employee_id).first()
             if employee is not None:
+                from app.services import notification_service
+
                 notification_service.notify(
                     db,
                     employee.id,

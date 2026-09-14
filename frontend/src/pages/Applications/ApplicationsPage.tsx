@@ -58,6 +58,8 @@ export function ApplicationsPage() {
   const [status, setStatus] = useState<ApplicationStatus | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [review, setReview] = useState<{ application: Application; next: ApplicationStatus } | null>(null);
+  const [reviewNote, setReviewNote] = useState('');
   const { data, isLoading, error, refetch } = useApplications({
     page,
     page_size: PAGE_SIZE,
@@ -73,10 +75,13 @@ export function ApplicationsPage() {
 
   const applications = data?.items ?? [];
 
-  const handleTransition = async (application: Application, next: ApplicationStatus) => {
+  const handleTransition = async (application: Application, next: ApplicationStatus, reviewNote?: string) => {
     setActionError('');
     try {
-      await updateMutation.mutateAsync({ id: application.id, data: { status: next } });
+      await updateMutation.mutateAsync({
+        id: application.id,
+        data: { status: next, review_note: reviewNote || undefined },
+      });
       toast.success(`Application marked as ${STATUS_LABELS[next]}`);
     } catch (err) {
       const message = getApiErrorMessage(err);
@@ -168,6 +173,14 @@ export function ApplicationsPage() {
                       <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[application.status]}`}>
                         {STATUS_LABELS[application.status]}
                       </span>
+                      {application.reviewed_by && (
+                        <p className="mt-1 text-xs text-gray-400">
+                          Reviewed by {application.reviewed_by} on{' '}
+                          {new Date(application.reviewed_at || Date.now()).toLocaleDateString()}
+                          {' — '}
+                          {application.review_note || 'no note'}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(application.created_at).toLocaleDateString()}
@@ -178,7 +191,7 @@ export function ApplicationsPage() {
                           <>
                             <button
                               onClick={() =>
-                                handleTransition(application, approveTarget[application.status])
+                                setReview({ application, next: approveTarget[application.status] })
                               }
                               disabled={updateMutation.isPending}
                               className="text-green-600 hover:text-green-900 mr-4 disabled:opacity-50"
@@ -186,7 +199,7 @@ export function ApplicationsPage() {
                               Approve
                             </button>
                             <button
-                              onClick={() => handleTransition(application, 'REJECTED')}
+                              onClick={() => setReview({ application, next: 'REJECTED' })}
                               disabled={updateMutation.isPending}
                               className="text-red-600 hover:text-red-900 disabled:opacity-50"
                             >
@@ -225,6 +238,53 @@ export function ApplicationsPage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {review && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" />
+            <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl p-6">
+              <h2 className="text-lg font-medium text-gray-900">Review application</h2>
+              <div className="mt-4">
+                <label htmlFor="review-note" className="block text-sm font-medium text-gray-700">
+                  Review note (optional)
+                </label>
+                <textarea
+                  id="review-note"
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  rows={3}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Add a note for the review trail..."
+                />
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setReview(null);
+                    setReviewNote('');
+                  }}
+                  disabled={updateMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleTransition(review.application, review.next, reviewNote);
+                    setReview(null);
+                    setReviewNote('');
+                  }}
+                  disabled={updateMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

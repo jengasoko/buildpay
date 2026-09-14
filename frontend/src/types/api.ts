@@ -100,6 +100,9 @@ export interface Application {
   employee_id: number;
   house_id: number;
   status: ApplicationStatus;
+  review_note: string | null;
+  reviewed_by: string;
+  reviewed_at: string | null;
   created_at: string;
   house_title: string;
   employee_username: string;
@@ -112,14 +115,17 @@ export interface ApplicationCreate {
 }
 
 export interface ApplicationUpdate {
-  status: ApplicationStatus;
+  status?: ApplicationStatus;
+  review_note?: string;
 }
 
 export interface Payment {
   id: number;
   application_id: number | null;
+  invoice_id: number | null;
   amount: number;
   payment_date: string;
+  method: PaymentMethod;
   reference: string | null;
   created_at: string;
   application_house_title: string;
@@ -169,12 +175,17 @@ export interface UserUpdate {
 
 export interface PaymentCreate {
   application_id?: number;
+  invoice_id?: number;
   amount: number;
+  method?: PaymentMethod;
   reference?: string;
 }
 
 export interface PaymentUpdate {
+  application_id?: number;
+  invoice_id?: number;
   amount?: number;
+  method?: PaymentMethod;
   reference?: string;
 }
 
@@ -251,4 +262,248 @@ export interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+// ---- Phase 5/6: Leases, Rooms, Billing, Maintenance, Reports ----
+
+export type LeaseStatus =
+  | 'DRAFT'
+  | 'PENDING_SIGNATURE'
+  | 'ACTIVE'
+  | 'TERMINATED'
+  | 'EXPIRED';
+
+export type BlockType = 'PRIVATE' | 'SHARED' | 'DORMITORY' | 'OTHER';
+
+export type InvoiceStatus = 'OPEN' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'VOID';
+
+export type ChargeType = 'RENT' | 'DEPOSIT' | 'UTILITY' | 'LATE_FEE' | 'OTHER';
+
+export type PaymentMethod = 'CASH' | 'EFT' | 'CARD' | 'PAYROLL_DEDUCTION';
+
+export type MaintenanceStatus =
+  | 'SUBMITTED'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'RESOLVED'
+  | 'CLOSED';
+
+export type MaintenanceCategory =
+  | 'PLUMBING'
+  | 'ELECTRICAL'
+  | 'STRUCTURAL'
+  | 'PEST_CONTROL'
+  | 'APPLIANCE'
+  | 'OTHER';
+
+export interface Room {
+  id: number;
+  house_id: number;
+  room_number: string;
+  block_type: BlockType;
+  capacity: number;
+  is_available: boolean;
+  notes: string | null;
+  created_at: string;
+  house_title: string;
+}
+
+export interface RoomCreate {
+  house_id: number;
+  room_number: string;
+  block_type?: BlockType;
+  capacity?: number;
+  is_available?: boolean;
+  notes?: string;
+}
+
+export interface RoomUpdate {
+  room_number?: string;
+  block_type?: BlockType;
+  capacity?: number;
+  is_available?: boolean;
+  notes?: string;
+}
+
+export interface Lease {
+  id: number;
+  occupancy_id: number;
+  employee_id: number;
+  house_id: number;
+  room_id: number | null;
+  rent_amount: number;
+  deposit_amount: number;
+  deposit_paid: boolean;
+  start_date: string;
+  end_date: string | null;
+  billing_day: number;
+  late_fee_amount: number;
+  status: LeaseStatus;
+  signed_at: string | null;
+  created_at: string;
+  house_title: string;
+  employee_username: string;
+  room_number: string;
+}
+
+export interface LeaseCreate {
+  occupancy_id: number;
+  rent_amount: number;
+  deposit_amount?: number;
+  start_date: string;
+  end_date?: string;
+  billing_day?: number;
+  late_fee_amount?: number;
+  room_id?: number;
+}
+
+export interface LeaseUpdate {
+  rent_amount?: number;
+  deposit_amount?: number;
+  deposit_paid?: boolean;
+  end_date?: string;
+  billing_day?: number;
+  room_id?: number;
+}
+
+export interface Charge {
+  id: number;
+  invoice_id: number;
+  charge_type: ChargeType;
+  label: string;
+  amount: number;
+}
+
+export interface Invoice {
+  id: number;
+  lease_id: number;
+  period_start: string;
+  period_end: string;
+  due_date: string;
+  total_amount: number;
+  paid_amount: number;
+  late_fee_amount: number;
+  status: InvoiceStatus;
+  notes: string | null;
+  created_at: string;
+  balance_due: number;
+  house_title: string;
+  employee_username: string;
+  charges: Charge[];
+}
+
+export interface InvoiceAllocateRequest {
+  payment_id?: number;
+  amount: number;
+  method?: PaymentMethod;
+  reference?: string;
+}
+
+export interface ArrearsBucket {
+  bucket: string;
+  count: number;
+  amount: number;
+}
+
+export interface ArrearsSummary {
+  total_outstanding: number;
+  total_overdue: number;
+  buckets: ArrearsBucket[];
+}
+
+export interface StatementEntry {
+  date: string;
+  type: 'INVOICE' | 'PAYMENT';
+  description: string;
+  amount: number;
+  running_balance: number;
+}
+
+export interface StatementOfAccount {
+  lease: Lease;
+  balance: number;
+  entries: StatementEntry[];
+}
+
+export interface MaintenanceRequest {
+  id: number;
+  house_id: number;
+  room_id: number | null;
+  employee_id: number;
+  reported_by_id: number | null;
+  category: MaintenanceCategory;
+  title: string;
+  description: string;
+  priority: 'low' | 'normal' | 'high';
+  status: MaintenanceStatus;
+  assigned_to_id: number | null;
+  assigned_by_id: number | null;
+  assigned_to_username: string;
+  resolution_note: string | null;
+  photos: string[];
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  house_title: string;
+  employee_username: string;
+}
+
+export interface MaintenanceCreate {
+  house_id: number;
+  room_id?: number;
+  employee_id?: number;
+  category?: MaintenanceCategory;
+  title: string;
+  description: string;
+  priority?: 'low' | 'normal' | 'high';
+  photos?: string[];
+}
+
+export interface MaintenanceUpdate {
+  room_id?: number;
+  category?: MaintenanceCategory;
+  title?: string;
+  description?: string;
+  priority?: 'low' | 'normal' | 'high';
+  status?: MaintenanceStatus;
+  assigned_to_id?: number;
+  resolution_note?: string;
+}
+
+export interface EmployeeDashboard {
+  counts: {
+    applications: number;
+    open_maintenance: number;
+    active_invoice_count: number;
+  };
+  application: Application | null;
+  lease: Lease | null;
+  account_balance: number;
+  next_invoice_due: string | null;
+  recent_invoices: Invoice[];
+  open_maintenance: number;
+}
+
+export interface FinancialReport {
+  month: number;
+  year: number;
+  collected: number;
+  outstanding: number;
+  overdue: number;
+  open_invoices: number;
+  active_leases: number;
+  arrears: ArrearsBucket[];
+}
+
+export interface OccupancyReport {
+  total_houses: number;
+  available_houses: number;
+  occupied_houses: number;
+  active_leases: number;
+  by_house: Array<{
+    house_id: number;
+    title: string;
+    available: boolean;
+    occupants: number;
+  }>;
 }

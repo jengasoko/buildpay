@@ -11,6 +11,8 @@ import { ApplicationsPage } from '@/pages/Applications/ApplicationsPage';
 import { SystemLogsPage } from '@/pages/SystemLogs/SystemLogsPage';
 import { MyHousingPage } from '@/pages/MyHousing/MyHousingPage';
 import { OccupanciesPage } from '@/pages/Occupancies/OccupanciesPage';
+import { MaintenancePage } from '@/pages/Maintenance/MaintenancePage';
+import { ReportsPage } from '@/pages/Reports/ReportsPage';
 import { MainLayout } from '@/components/layout/MainLayout';
 
 export function AppRoutes() {
@@ -31,6 +33,8 @@ export function AppRoutes() {
           <Route path="/occupancies" element={<OccupanciesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/system-logs" element={<SystemLogsPage />} />
         </Route>
       </Route>

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import (
@@ -7,7 +9,13 @@ from app.core.exceptions import (
     NotFoundException,
 )
 from app.models import ApplicationStatus, User, UserRole
-from app.repositories import application_repository, house_repository, occupancy_repository, user_repository
+from app.repositories import (
+    application_repository,
+    house_repository,
+    lease_repository,
+    occupancy_repository,
+    user_repository,
+)
 from app.schemas import ApplicationCreate, ApplicationResponse, ApplicationUpdate
 from app.services import employment_service, notification_service
 from app.services.logs import log_event, log_security_event
@@ -215,7 +223,16 @@ def update_application(
                 )
 
     previous_status = application.status.value
-    updated = application_repository.update_application(db, application, update_data)
+    review_fields: dict = {}
+    if new_status is not None and new_status != previous_status and current_user is not None:
+        review_fields = {
+            "reviewed_by_id": current_user.id,
+            "reviewed_at": datetime.now(UTC),
+        }
+        review_note = (data.review_note if data else None) or update_data.get("review_note")
+        if review_note:
+            review_fields["review_note"] = review_note
+    updated = application_repository.update_application(db, application, {**update_data, **review_fields})
 
     employee = application.employee
     house_title = updated.house.title if updated.house else f"house #{updated.house_id}"
@@ -224,8 +241,9 @@ def update_application(
         house = updated.house
         if house is not None and house.available:
             house_repository.update_house(db, house, {"available": False})
-        if occupancy_repository.get_occupancy_by_application(db, application_id) is None:
-            occupancy_repository.create_occupancy(
+        occupancy = occupancy_repository.get_occupancy_by_application(db, application_id)
+        if occupancy is None:
+            occupancy = occupancy_repository.create_occupancy(
                 db,
                 {
                     "application_id": application_id,
@@ -233,6 +251,11 @@ def update_application(
                     "employee_id": updated.employee_id,
                 },
             )
+        # Phase 6: auto-create the tenancy (lease) so billing can start.
+        if lease_repository.get_active_lease_by_occupancy(db, occupancy.id) is None:
+            from app.services.lease_service import create_lease_from_occupancy
+
+            create_lease_from_occupancy(db, occupancy.id, current_user=current_user)
     elif new_status == ApplicationStatus.REJECTED.value:
         if employee is not None:
             notification_service.notify(

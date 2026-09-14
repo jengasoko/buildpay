@@ -7,3 +7,10 @@ export function useDashboardStats() {
     queryFn: () => dashboardApi.getStats().then((r) => r.data),
   });
 }
+
+export function useEmployeeDashboard() {
+  return useQuery({
+    queryKey: ['dashboard', 'me'],
+    queryFn: () => dashboardApi.getMe().then((r) => r.data),
+  });
+}
