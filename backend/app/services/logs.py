@@ -11,7 +11,7 @@ from app.schemas import SystemLogResponse
 def log_event(
     db: Session,
     action: str,
-    entity_type: str,
+    entity_type: str | None = None,
     entity_id: int | None = None,
     details: dict[str, Any] | None = None,
     user_id: int | None = None,
@@ -25,6 +25,34 @@ def log_event(
     }
     log = log_repository.create_log(db, log_data)
     return SystemLogResponse.model_validate(log)
+
+
+def log_security_event(
+    db: Session,
+    action: str,
+    *,
+    entity_type: str | None = None,
+    entity_id: int | None = None,
+    details: dict[str, Any] | None = None,
+    user_id: int | None = None,
+) -> SystemLogResponse:
+    """Writes an audit entry and commits it immediately.
+
+    Used for security-relevant events (failed logins, denied access) that occur on
+    failing request paths. The request transaction would otherwise be rolled back and
+    the record lost, so it is persisted in its own commit. Call before any other
+    writes in the request to avoid committing unrelated pending changes.
+    """
+    record = log_event(
+        db,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        details=details,
+        user_id=user_id,
+    )
+    db.commit()
+    return record
 
 
 def get_log(db: Session, log_id: int) -> SystemLogResponse:

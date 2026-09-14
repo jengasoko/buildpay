@@ -38,11 +38,11 @@ def count_employments(db: Session, employer_id: int | None = None) -> int:
 def create_employment(db: Session, data: dict) -> Employment:
     employment = Employment(**data)
     db.add(employment)
-    db.commit()
+    db.flush()
     db.refresh(employment)
     return employment
 
 
 def delete_employment(db: Session, employment: Employment) -> None:
     db.delete(employment)
-    db.commit()
+    db.flush()

@@ -57,7 +57,7 @@ def count_payments(db: Session) -> int:
 def create_payment(db: Session, payment_data: dict) -> Payment:
     payment = Payment(**payment_data)
     db.add(payment)
-    db.commit()
+    db.flush()
     db.refresh(payment)
     return payment
 
@@ -65,6 +65,6 @@ def create_payment(db: Session, payment_data: dict) -> Payment:
 def update_payment(db: Session, payment: Payment, update_data: dict) -> Payment:
     for key, value in update_data.items():
         setattr(payment, key, value)
-    db.commit()
+    db.flush()
     db.refresh(payment)
     return payment

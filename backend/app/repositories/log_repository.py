@@ -25,6 +25,6 @@ def count_logs(db: Session) -> int:
 def create_log(db: Session, log_data: dict) -> SystemLog:
     log = SystemLog(**log_data)
     db.add(log)
-    db.commit()
+    db.flush()
     db.refresh(log)
     return log

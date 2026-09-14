@@ -30,14 +30,14 @@ def count_notifications(db: Session, user_id: int | None = None, unread_only: bo
 def create_notification(db: Session, data: dict) -> Notification:
     notification = Notification(**data)
     db.add(notification)
-    db.commit()
+    db.flush()
     db.refresh(notification)
     return notification
 
 
 def mark_read(db: Session, notification: Notification) -> Notification:
     notification.is_read = True
-    db.commit()
+    db.flush()
     db.refresh(notification)
     return notification
 
@@ -48,5 +48,5 @@ def mark_all_read(db: Session, user_id: int) -> int:
         .filter(Notification.user_id == user_id, Notification.is_read.is_(False))
         .update({Notification.is_read: True})
     )
-    db.commit()
+    db.flush()
     return updated

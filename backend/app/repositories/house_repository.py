@@ -24,7 +24,7 @@ def count_houses(db: Session, available_only: bool = False) -> int:
 def create_house(db: Session, house_data: dict) -> House:
     house = House(**house_data)
     db.add(house)
-    db.commit()
+    db.flush()
     db.refresh(house)
     return house
 
@@ -32,11 +32,11 @@ def create_house(db: Session, house_data: dict) -> House:
 def update_house(db: Session, house: House, update_data: dict) -> House:
     for key, value in update_data.items():
         setattr(house, key, value)
-    db.commit()
+    db.flush()
     db.refresh(house)
     return house
 
 
 def delete_house(db: Session, house: House) -> None:
     db.delete(house)
-    db.commit()
+    db.flush()

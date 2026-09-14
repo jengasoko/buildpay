@@ -43,7 +43,7 @@ def count_users(db: Session) -> int:
 def create_user(db: Session, user_data: dict) -> User:
     user = User(**user_data)
     db.add(user)
-    db.commit()
+    db.flush()
     db.refresh(user)
     return user
 
@@ -51,6 +51,6 @@ def create_user(db: Session, user_data: dict) -> User:
 def update_user(db: Session, user: User, update_data: dict) -> User:
     for key, value in update_data.items():
         setattr(user, key, value)
-    db.commit()
+    db.flush()
     db.refresh(user)
     return user

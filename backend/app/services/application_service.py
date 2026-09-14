@@ -10,7 +10,7 @@ from app.models import ApplicationStatus, User, UserRole
 from app.repositories import application_repository, house_repository, occupancy_repository, user_repository
 from app.schemas import ApplicationCreate, ApplicationResponse, ApplicationUpdate
 from app.services import employment_service, notification_service
-from app.services.logs import log_event
+from app.services.logs import log_event, log_security_event
 
 ALLOWED_TRANSITIONS = {
     ApplicationStatus.PENDING: {ApplicationStatus.EMPLOYER_APPROVED, ApplicationStatus.REJECTED},
@@ -43,6 +43,17 @@ def _notify_assigned_employers(db: Session, employee_id: int, title: str, messag
 
 def create_application(db: Session, data: ApplicationCreate, current_user: User | None = None) -> ApplicationResponse:
     if current_user is not None and current_user.role == UserRole.EMPLOYEE and data.employee_id != current_user.id:
+        log_security_event(
+            db,
+            action="ACCESS.DENIED",
+            entity_type="APPLICATION",
+            details={
+                "user_id": current_user.id,
+                "username": current_user.username,
+                "reason": "Employees may only create applications for themselves",
+            },
+            user_id=current_user.id,
+        )
         raise ForbiddenException("Employees may only create applications for themselves")
 
     employee = user_repository.get_user_by_id(db, data.employee_id)
@@ -87,10 +98,34 @@ def get_application(db: Session, application_id: int, current_user: User | None 
         raise NotFoundException("Application")
     if current_user is not None:
         if current_user.role == UserRole.EMPLOYEE and application.employee_id != current_user.id:
+            log_security_event(
+                db,
+                action="ACCESS.DENIED",
+                entity_type="APPLICATION",
+                entity_id=application_id,
+                details={
+                    "user_id": current_user.id,
+                    "username": current_user.username,
+                    "reason": "Employees may only view their own applications",
+                },
+                user_id=current_user.id,
+            )
             raise ForbiddenException("Employees may only view their own applications")
         if current_user.role == UserRole.EMPLOYER:
             employment = employment_service.get_employment_by_employee(db, application.employee_id)
             if employment is None or employment.employer_id != current_user.id:
+                log_security_event(
+                    db,
+                    action="ACCESS.DENIED",
+                    entity_type="APPLICATION",
+                    entity_id=application_id,
+                    details={
+                        "user_id": current_user.id,
+                        "username": current_user.username,
+                        "reason": "Employers may only view applications from their own team",
+                    },
+                    user_id=current_user.id,
+                )
                 raise ForbiddenException("Employers may only view applications from their own team")
     return ApplicationResponse.model_validate(application)
 
@@ -135,6 +170,18 @@ def update_application(
     if current_user is not None and current_user.role == UserRole.EMPLOYER:
         employment = employment_service.get_employment_by_employee(db, application.employee_id)
         if employment is None or employment.employer_id != current_user.id:
+            log_security_event(
+                db,
+                action="ACCESS.DENIED",
+                entity_type="APPLICATION",
+                entity_id=application_id,
+                details={
+                    "user_id": current_user.id,
+                    "username": current_user.username,
+                    "reason": "Employers may only review applications from their own team",
+                },
+                user_id=current_user.id,
+            )
             raise ForbiddenException("Employers may only review applications from their own team")
 
     if new_status is not None and new_status != application.status:
@@ -147,6 +194,21 @@ def update_application(
         else:
             allowed = ROLE_TRANSITIONS.get(current_user.role, {}).get(application.status, set())
             if new_status not in allowed:
+                log_security_event(
+                    db,
+                    action="ACCESS.DENIED",
+                    entity_type="APPLICATION",
+                    entity_id=application_id,
+                    details={
+                        "user_id": current_user.id,
+                        "username": current_user.username,
+                        "reason": (
+                            f"Role {current_user.role.value} cannot transition application from "
+                            f"{application.status.value} to {new_status.value}"
+                        ),
+                    },
+                    user_id=current_user.id,
+                )
                 raise ForbiddenException(
                     f"Role {current_user.role.value} cannot transition application from "
                     f"{application.status.value} to {new_status.value}"

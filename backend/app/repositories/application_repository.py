@@ -77,7 +77,7 @@ def count_applications(
 def create_application(db: Session, application_data: dict) -> Application:
     application = Application(**application_data)
     db.add(application)
-    db.commit()
+    db.flush()
     db.refresh(application)
     return application
 
@@ -85,6 +85,6 @@ def create_application(db: Session, application_data: dict) -> Application:
 def update_application(db: Session, application: Application, update_data: dict) -> Application:
     for key, value in update_data.items():
         setattr(application, key, value)
-    db.commit()
+    db.flush()
     db.refresh(application)
     return application

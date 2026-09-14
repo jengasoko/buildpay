@@ -33,8 +33,25 @@ def get_current_user(
 
 
 def require_role(*roles: UserRole):
-    def role_checker(current_user: User = Depends(get_current_user)) -> User:
+    def role_checker(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> User:
         if current_user.role not in roles:
+            from app.services.logs import log_security_event
+
+            log_security_event(
+                db,
+                action="ACCESS.DENIED",
+                entity_type="ENDPOINT",
+                details={
+                    "user_id": current_user.id,
+                    "username": current_user.username,
+                    "actual_role": current_user.role.value,
+                    "required_roles": [role.value for role in roles],
+                },
+                user_id=current_user.id,
+            )
             raise ForbiddenException("Insufficient permissions")
         return current_user
 

@@ -38,7 +38,7 @@ def count_occupancies(db: Session, current_only: bool = False) -> int:
 def create_occupancy(db: Session, data: dict) -> Occupancy:
     occupancy = Occupancy(**data)
     db.add(occupancy)
-    db.commit()
+    db.flush()
     db.refresh(occupancy)
     return occupancy
 
@@ -46,6 +46,6 @@ def create_occupancy(db: Session, data: dict) -> Occupancy:
 def update_occupancy(db: Session, occupancy: Occupancy, update_data: dict) -> Occupancy:
     for key, value in update_data.items():
         setattr(occupancy, key, value)
-    db.commit()
+    db.flush()
     db.refresh(occupancy)
     return occupancy

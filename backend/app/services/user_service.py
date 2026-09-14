@@ -5,7 +5,7 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.models import User
 from app.repositories import user_repository
 from app.schemas import LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate
-from app.services.logs import log_event
+from app.services.logs import log_event, log_security_event
 
 
 def register_user(db: Session, data: UserCreate) -> UserResponse:
@@ -31,8 +31,21 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
 def authenticate_user(db: Session, data: LoginRequest) -> TokenResponse:
     user = user_repository.get_user_by_username(db, data.username)
     if not user or not verify_password(data.password, user.hashed_password):
+        log_security_event(
+            db,
+            action="AUTH.LOGIN_FAILED",
+            entity_type="AUTH",
+            details={"username": data.username, "user_id": user.id if user else None, "reason": "bad_credentials"},
+        )
         raise BadRequestException("Invalid username or password")
     if not user.is_active:
+        log_security_event(
+            db,
+            action="AUTH.ACCOUNT_DISABLED",
+            entity_type="AUTH",
+            details={"username": data.username, "user_id": user.id},
+            user_id=user.id,
+        )
         raise BadRequestException("Account is disabled")
 
     token = create_access_token(data={"sub": str(user.id), "role": user.role.value})

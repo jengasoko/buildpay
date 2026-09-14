@@ -4,19 +4,26 @@ from app.core.exceptions import BadRequestException, ForbiddenException, NotFoun
 from app.models import User, UserRole
 from app.repositories import house_repository, occupancy_repository
 from app.schemas import OccupancyResponse
-from app.services.logs import log_event
+from app.services.logs import log_event, log_security_event
 
 
 def get_occupancy(db: Session, occupancy_id: int, current_user: User | None = None) -> OccupancyResponse:
     occupancy = occupancy_repository.get_occupancy_by_id(db, occupancy_id)
     if not occupancy:
         raise NotFoundException("Occupancy")
-    if (
-        current_user is not None
-        and current_user.role == UserRole.EMPLOYEE
-        and occupancy.employee_id != current_user.id
-        and not (current_user.role == UserRole.EMPLOYER and occupancy.employee.employer_id == current_user.id)
-    ):
+    if current_user is not None and current_user.role == UserRole.EMPLOYEE and occupancy.employee_id != current_user.id:
+        log_security_event(
+            db,
+            action="ACCESS.DENIED",
+            entity_type="OCCUPANCY",
+            entity_id=occupancy_id,
+            details={
+                "user_id": current_user.id,
+                "username": current_user.username,
+                "reason": "Employees may only access their own occupancy records",
+            },
+            user_id=current_user.id,
+        )
         raise ForbiddenException("Employees may only access their own occupancy records")
     return OccupancyResponse.model_validate(occupancy)
 
@@ -25,6 +32,17 @@ def list_occupancies(
     db: Session, page: int = 1, page_size: int = 100, current_only: bool = False, current_user: User | None = None
 ) -> dict:
     if current_user is not None and current_user.role == UserRole.EMPLOYEE:
+        log_security_event(
+            db,
+            action="ACCESS.DENIED",
+            entity_type="OCCUPANCY",
+            details={
+                "user_id": current_user.id,
+                "username": current_user.username,
+                "reason": "Employees cannot browse occupancy records",
+            },
+            user_id=current_user.id,
+        )
         raise ForbiddenException("Employees cannot browse occupancy records")
     skip = (page - 1) * page_size
     occupancies = occupancy_repository.get_occupancies(db, skip=skip, limit=page_size, current_only=current_only)
