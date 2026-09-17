@@ -53,13 +53,16 @@ def _month_end(d: datetime) -> datetime:
     return datetime(d.year, d.month, last)
 
 
+def _naive(d: datetime) -> datetime:
+    """Strip tzinfo so values read from PG (timestamptz) compare cleanly against naive UTC nows."""
+    return d.replace(tzinfo=None) if d.tzinfo else d
+
+
 def _pro_rated_rent(lease: Lease, period_start: datetime, period_end: datetime) -> float:
     """First invoice is prorated when the lease begins mid-month."""
-    lease_start = lease.start_date
-    if lease_start.tzinfo:
-        lease_start = lease_start.replace(tzinfo=None)
-    ps = period_start.replace(tzinfo=None) if period_start.tzinfo else period_start
-    pe = period_end.replace(tzinfo=None) if period_end.tzinfo else period_end
+    lease_start = _naive(lease.start_date)
+    ps = _naive(period_start)
+    pe = _naive(period_end)
     total_days = (pe - ps).days + 1
     days = total_days
     if lease_start > ps:
@@ -89,7 +92,7 @@ def generate_monthly_invoice(db: Session, lease_id: int, current_user: User | No
     if late_fee:
         now = datetime.now(UTC).replace(tzinfo=None)
         has_overdue = any(
-            i.status in (InvoiceStatus.OPEN, InvoiceStatus.PARTIAL) and i.due_date < now
+            i.status in (InvoiceStatus.OPEN, InvoiceStatus.PARTIAL) and _naive(i.due_date) < now
             for i in invoice_repository.get_open_invoices_for_lease(db, lease_id)
         )
         if not has_overdue:
@@ -266,7 +269,7 @@ def arrears_summary(db: Session, current_user: User | None = None) -> ArrearsSum
                 continue
             balance = float(inv.balance_due)
             total_outstanding = round(total_outstanding + balance, 2)
-            if inv.due_date >= now:
+            if _naive(inv.due_date) >= now:
                 continue
             total_overdue = round(total_overdue + balance, 2)
             days = (now.date() - inv.due_date.date()).days
