@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
 from app.models import User, UserRole
-from app.repositories import house_repository, occupancy_repository
+from app.repositories import house_repository, lease_repository, occupancy_repository, room_repository
 from app.schemas import OccupancyResponse
 from app.services.logs import log_event, log_security_event
 
@@ -71,9 +71,20 @@ def end_occupancy(db: Session, occupancy_id: int, current_user: User | None = No
 
     updated = occupancy_repository.update_occupancy(db, occupancy, {"ended_at": datetime.now(UTC)})
 
+    # Phase 6: terminating move-out also terminates any active lease and frees the room.
+    lease = updated.lease or lease_repository.get_active_lease_by_occupancy(db, occupancy_id)
+    if lease is not None:
+        from app.models import LeaseStatus
+
+        lease_repository.update_lease(db, lease, {"status": LeaseStatus.TERMINATED})
+
     house = updated.house
     if house is not None and not house.available:
         house_repository.update_house(db, house, {"available": True})
+    if updated.room_id is not None:
+        room = room_repository.get_room_by_id(db, updated.room_id)
+        if room is not None and not room.is_available:
+            room_repository.update_room(db, room, {"is_available": True})
 
     log_event(
         db,

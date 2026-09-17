@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { usePayments } from '@/features/payments/hooks/usePayments';
 import { useApplications, useUpdateApplication } from '@/features/applications/hooks/useApplications';
+import { useArrears } from '@/features/invoices/hooks/useInvoices';
 import { PaymentFormModal } from '@/features/payments/components/PaymentFormModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
@@ -18,6 +19,7 @@ export function PaymentsPage() {
   const [editingPayment, setEditingPayment] = useState<Payment | undefined>(undefined);
   const { data, isLoading, error, refetch } = usePayments({ page, page_size: 20 });
   const awaiting = useApplications({ page: 1, page_size: 50, status: 'EMPLOYER_APPROVED' });
+  const arrears = useArrears();
   const updateApplication = useUpdateApplication();
   const isFinance = user?.role === 'FINANCIAL_OFFICER' || user?.role === 'ADMIN';
 
@@ -36,6 +38,7 @@ export function PaymentsPage() {
 
   const payments = data?.items ?? [];
   const awaitingApproval = awaiting.data?.items ?? [];
+  const arrearsData = arrears.data;
 
   const handleApprove = async (applicationId: number) => {
     try {
@@ -100,22 +103,66 @@ export function PaymentsPage() {
           </section>
 
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Collected by unit (page)</h2>
-            {perHouseTotals.length === 0 ? (
-              <p className="text-sm text-gray-500">No payments on this page.</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Arrears</h2>
+            {!arrearsData ? (
+              <p className="text-sm text-gray-500">Loading arrears…</p>
             ) : (
-              <ul className="divide-y divide-gray-200">
-                {perHouseTotals.map(([key, total]) => (
-                  <li key={key} className="py-2 flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{key}</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <>
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Total Outstanding</span>
+                    <span className="text-sm font-semibold text-red-600">
+                      ${arrearsData.total_outstanding.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </span>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Total Overdue</span>
+                    <span className="text-sm font-semibold text-red-700">
+                      ${arrearsData.total_overdue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+                {arrearsData.buckets.length > 0 && (
+                  <table className="w-full text-sm divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="text-left font-medium text-gray-500 py-1">Aging</th>
+                        <th className="text-right font-medium text-gray-500 py-1">Count</th>
+                        <th className="text-right font-medium text-gray-500 py-1">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {arrearsData.buckets.map((b) => (
+                        <tr key={b.bucket}>
+                          <td className="py-1.5 text-gray-700">{b.bucket}</td>
+                          <td className="py-1.5 text-right text-gray-700">{b.count}</td>
+                          <td className="py-1.5 text-right font-medium text-gray-900">
+                            ${b.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
             )}
           </section>
+        </div>
+      )}
+
+      {isFinance && perHouseTotals.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Collected by unit (page)</h2>
+          <ul className="divide-y divide-gray-200">
+            {perHouseTotals.map(([key, total]) => (
+              <li key={key} className="py-2 flex items-center justify-between">
+                <span className="text-sm text-gray-600">{key}</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -133,7 +180,13 @@ export function PaymentsPage() {
                   Amount
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Invoice
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Application
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Method
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Reference
@@ -156,6 +209,9 @@ export function PaymentsPage() {
                     ${payment.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.invoice_id ? `#${payment.invoice_id}` : '—'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {payment.application_id ? (
                       <>
                         #{payment.application_id}
@@ -168,6 +224,9 @@ export function PaymentsPage() {
                     ) : (
                       '—'
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.method ?? '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {payment.reference || '—'}

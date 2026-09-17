@@ -6,10 +6,14 @@ from app.api.v1.endpoints import (
     employments,
     entities,
     health,
+    invoices,
+    leases,
     logs,
+    maintenance_requests,
     notifications,
     occupancies,
     payments,
+    rooms,
     users,
 )
 
@@ -25,3 +29,7 @@ api_router.include_router(dashboard.router)
 api_router.include_router(employments.router)
 api_router.include_router(occupancies.router)
 api_router.include_router(notifications.router)
+api_router.include_router(rooms.router)
+api_router.include_router(leases.router)
+api_router.include_router(invoices.router)
+api_router.include_router(maintenance_requests.router)

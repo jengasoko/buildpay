@@ -1,9 +1,13 @@
 from app.repositories import application_repository as application_repository  # noqa: F401
 from app.repositories import employment_repository as employment_repository  # noqa: F401
 from app.repositories import house_repository as house_repository  # noqa: F401
+from app.repositories import invoice_repository as invoice_repository  # noqa: F401
+from app.repositories import lease_repository as lease_repository  # noqa: F401
 from app.repositories import log_repository as log_repository  # noqa: F401
+from app.repositories import maintenance_repository as maintenance_repository  # noqa: F401
 from app.repositories import notification_repository as notification_repository  # noqa: F401
 from app.repositories import occupancy_repository as occupancy_repository  # noqa: F401
 from app.repositories import payment_repository as payment_repository  # noqa: F401
 from app.repositories import project_repository as project_repository  # noqa: F401
+from app.repositories import room_repository as room_repository  # noqa: F401
 from app.repositories import user_repository as user_repository  # noqa: F401

@@ -1,8 +1,18 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.models import ApplicationStatus, UserRole
+from app.models import (
+    ApplicationStatus,
+    BlockType,
+    ChargeType,
+    InvoiceStatus,
+    LeaseStatus,
+    MaintenanceCategory,
+    MaintenanceStatus,
+    PaymentMethod,
+    UserRole,
+)
 
 
 # --- Auth ---
@@ -147,6 +157,7 @@ class ApplicationCreate(BaseModel):
 
 class ApplicationUpdate(BaseModel):
     status: ApplicationStatus | None = None
+    review_note: str | None = None
 
 
 class ApplicationResponse(BaseModel):
@@ -154,6 +165,9 @@ class ApplicationResponse(BaseModel):
     employee_id: int
     house_id: int
     status: ApplicationStatus
+    review_note: str | None = None
+    reviewed_by: str = ""
+    reviewed_at: datetime | None = None
     created_at: datetime
     house_title: str
     employee_username: str
@@ -165,20 +179,26 @@ class ApplicationResponse(BaseModel):
 # --- Payment ---
 class PaymentCreate(BaseModel):
     application_id: int | None = None
+    invoice_id: int | None = None
     amount: float = Field(gt=0)
+    method: PaymentMethod = PaymentMethod.CASH
     reference: str | None = Field(default=None, max_length=100)
 
 
 class PaymentUpdate(BaseModel):
     application_id: int | None = None
+    invoice_id: int | None = None
     amount: float | None = None
+    method: PaymentMethod | None = None
     reference: str | None = None
 
 
 class PaymentResponse(BaseModel):
     id: int
     application_id: int | None
+    invoice_id: int | None
     amount: float
+    method: PaymentMethod
     payment_date: datetime
     reference: str | None
     created_at: datetime
@@ -186,6 +206,281 @@ class PaymentResponse(BaseModel):
     application_employee_username: str = ""
 
     model_config = {"from_attributes": True}
+
+
+# --- Room ---
+class RoomCreate(BaseModel):
+    house_id: int
+    room_number: str = Field(min_length=1, max_length=50)
+    block_type: BlockType = BlockType.OTHER
+    capacity: int = Field(default=1, ge=1)
+    is_available: bool = True
+    notes: str | None = None
+
+
+class RoomUpdate(BaseModel):
+    room_number: str | None = None
+    block_type: BlockType | None = None
+    capacity: int | None = None
+    is_available: bool | None = None
+    notes: str | None = None
+
+
+class RoomResponse(BaseModel):
+    id: int
+    house_id: int
+    room_number: str
+    block_type: BlockType
+    capacity: int
+    is_available: bool
+    notes: str | None
+    created_at: datetime
+    house_title: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+# --- Lease ---
+class LeaseCreate(BaseModel):
+    occupancy_id: int
+    rent_amount: float = Field(gt=0)
+    deposit_amount: float = Field(default=0, ge=0)
+    start_date: datetime
+    end_date: datetime | None = None
+    billing_day: int = Field(default=1, ge=1, le=28)
+    late_fee_amount: float = Field(default=0, ge=0)
+    room_id: int | None = None
+
+
+class LeaseUpdate(BaseModel):
+    rent_amount: float | None = Field(default=None, gt=0)
+    deposit_amount: float | None = Field(default=None, ge=0)
+    deposit_paid: bool | None = None
+    end_date: datetime | None = None
+    billing_day: int | None = Field(default=None, ge=1, le=28)
+    room_id: int | None = None
+
+
+class LeaseResponse(BaseModel):
+    id: int
+    occupancy_id: int
+    employee_id: int
+    house_id: int
+    room_id: int | None
+    rent_amount: float
+    deposit_amount: float
+    deposit_paid: bool
+    start_date: datetime
+    end_date: datetime | None
+    billing_day: int
+    late_fee_amount: float
+    status: LeaseStatus
+    signed_at: datetime | None
+    created_at: datetime
+    house_title: str = ""
+    employee_username: str = ""
+    room_number: str = ""
+
+    model_config = {"from_attributes": True}
+
+
+# --- Charge ---
+class ChargeCreate(BaseModel):
+    charge_type: ChargeType = ChargeType.RENT
+    label: str = Field(min_length=1, max_length=255)
+    amount: float = Field(gt=0)
+
+
+class ChargeResponse(BaseModel):
+    id: int
+    invoice_id: int
+    charge_type: ChargeType
+    label: str
+    amount: float
+
+    model_config = {"from_attributes": True}
+
+
+# --- Invoice ---
+class InvoiceCreate(BaseModel):
+    lease_id: int
+    period_start: datetime
+    period_end: datetime
+    due_date: datetime
+    charges: list[ChargeCreate] = Field(default_factory=list)
+    notes: str | None = None
+
+
+class InvoiceResponse(BaseModel):
+    id: int
+    lease_id: int
+    period_start: datetime
+    period_end: datetime
+    due_date: datetime
+    total_amount: float
+    paid_amount: float
+    late_fee_amount: float
+    status: InvoiceStatus
+    notes: str | None
+    created_at: datetime
+    balance_due: float
+    house_title: str = ""
+    employee_username: str = ""
+    charges: list[ChargeResponse] = []
+
+    model_config = {"from_attributes": True}
+
+
+class InvoiceAllocateRequest(BaseModel):
+    payment_id: int | None = None
+    amount: float = Field(gt=0)
+    method: PaymentMethod = PaymentMethod.CASH
+    reference: str | None = Field(default=None, max_length=100)
+
+
+# --- Maintenance ---
+class MaintenanceCreate(BaseModel):
+    house_id: int
+    room_id: int | None = None
+    employee_id: int | None = None
+    category: MaintenanceCategory = MaintenanceCategory.OTHER
+    title: str = Field(min_length=1, max_length=255)
+    description: str = Field(min_length=1)
+    priority: str = Field(default="normal", pattern="^(low|normal|high)$")
+    photos: list[str] | None = None
+
+
+class MaintenanceUpdate(BaseModel):
+    room_id: int | None = None
+    category: MaintenanceCategory | None = None
+    title: str | None = None
+    description: str | None = None
+    priority: str | None = None
+    status: MaintenanceStatus | None = None
+    assigned_to_id: int | None = None
+    resolution_note: str | None = None
+
+
+class MaintenanceResponse(BaseModel):
+    id: int
+    house_id: int
+    room_id: int | None
+    employee_id: int
+    reported_by_id: int | None
+    category: MaintenanceCategory
+    title: str
+    description: str
+    photos: list[str] = []
+    status: MaintenanceStatus
+    priority: str
+    assigned_to_id: int | None
+    assigned_to_username: str = ""
+    resolution_note: str | None
+    created_at: datetime
+    closed_at: datetime | None
+    house_title: str = ""
+    employee_username: str = ""
+    room_number: str = ""
+
+    @field_validator("photos", mode="before")
+    @classmethod
+    def _parse_photos(cls, v):
+        if isinstance(v, str):
+            import json
+
+            try:
+                return json.loads(v)
+            except Exception:
+                return [v] if v else []
+        return v or []
+
+    model_config = {"from_attributes": True}
+
+
+# --- Arrears / dashboard / reports ---
+class ArrearsBucket(BaseModel):
+    bucket: str
+    count: int
+    amount: float
+
+
+class ArrearsSummary(BaseModel):
+    total_outstanding: float
+    total_overdue: float
+    buckets: list[ArrearsBucket]
+
+
+class EmployeeDashboardResponse(BaseModel):
+    counts: dict[str, int]
+    application: ApplicationResponse | None = None
+    lease: LeaseResponse | None = None
+    account_balance: float
+    next_invoice_due: datetime | None = None
+    recent_invoices: list[InvoiceResponse] = []
+    open_maintenance: int = 0
+
+
+class FinancialReport(BaseModel):
+    month: int
+    year: int
+    collected: float
+    outstanding: float
+    overdue: float
+    open_invoices: int
+    active_leases: int
+    arrears: list[ArrearsBucket]
+
+
+class OccupancyReport(BaseModel):
+    total_houses: int
+    available_houses: int
+    occupied_houses: int
+    active_leases: int
+    by_house: list[dict[str, object]]
+
+
+class TrendPoint(BaseModel):
+    month: str
+    value: float
+
+
+class OccupancyTrendPoint(BaseModel):
+    month: str
+    occupied: int
+    total: int
+
+
+class CollectionRatePoint(BaseModel):
+    month: str
+    invoiced: float
+    collected: float
+    rate: float
+
+
+class RevenueTrendResponse(BaseModel):
+    data: list[TrendPoint]
+
+
+class OccupancyTrendResponse(BaseModel):
+    data: list[OccupancyTrendPoint]
+
+
+class CollectionRateResponse(BaseModel):
+    data: list[CollectionRatePoint]
+
+
+class StatementEntry(BaseModel):
+    date: datetime
+    type: str
+    description: str
+    amount: float
+    running_balance: float
+
+
+class StatementOfAccount(BaseModel):
+    lease: LeaseResponse
+    balance: float
+    entries: list[StatementEntry]
 
 
 # --- Health ---

@@ -3,7 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardPage } from '@/pages/Dashboard/DashboardPage';
 import { useAuth } from '@/hooks/useAuth';
-import { useDashboardStats } from '@/features/dashboard/hooks/useDashboard';
+import { useDashboardStats, useRevenueTrend, useOccupancyTrend, useCollectionRate } from '@/features/dashboard/hooks/useDashboard';
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -11,6 +11,9 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/features/dashboard/hooks/useDashboard', () => ({
   useDashboardStats: vi.fn(),
+  useRevenueTrend: vi.fn(),
+  useOccupancyTrend: vi.fn(),
+  useCollectionRate: vi.fn(),
 }));
 
 const stats = {
@@ -67,6 +70,23 @@ describe('DashboardPage', () => {
       error: null,
       refetch: vi.fn(),
     } as never);
+    vi.mocked(useRevenueTrend).mockReturnValue({
+      data: { data: [{ month: '2026-09', value: 500 }] },
+      isLoading: false,
+      error: null,
+    } as never);
+    vi.mocked(useOccupancyTrend).mockReturnValue({
+      data: { data: [{ month: '2026-09', occupied: 3, total: 8 }] },
+      isLoading: false,
+      error: null,
+    } as never);
+    vi.mocked(useCollectionRate).mockReturnValue({
+      data: {
+        data: [{ month: '2026-09', invoiced: 1000, collected: 500, rate: 50 }],
+      },
+      isLoading: false,
+      error: null,
+    } as never);
   });
 
   it('renders stat cards from the stats endpoint', async () => {
@@ -83,5 +103,13 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Unit A1')).toBeInTheDocument();
     expect(screen.getByText('brian')).toBeInTheDocument();
     expect(screen.getByText('Pending')).toBeInTheDocument();
+  });
+
+  it('renders analytics charts for admin role', async () => {
+    renderPage();
+    expect(await screen.findByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Revenue Trend')).toBeInTheDocument();
+    expect(screen.getByText('Occupancy Trend')).toBeInTheDocument();
+    expect(screen.getByText('Payment Collection Rate')).toBeInTheDocument();
   });
 });

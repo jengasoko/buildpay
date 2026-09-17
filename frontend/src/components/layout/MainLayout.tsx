@@ -12,6 +12,8 @@ const NAV_ITEMS: Array<{ to: string; label: string; roles: UserRole[] }> = [
   { to: '/occupancies', label: 'Occupancies', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER'] },
   { to: '/users', label: 'Users', roles: ['ADMIN'] },
   { to: '/payments', label: 'Payments', roles: ['ADMIN', 'FINANCIAL_OFFICER'] },
+  { to: '/maintenance', label: 'Maintenance', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
+  { to: '/reports', label: 'Reports', roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER'] },
   { to: '/system-logs', label: 'System Logs', roles: ['ADMIN', 'PROJECT_MANAGER'] },
 ];
 
