@@ -439,6 +439,36 @@ class OccupancyReport(BaseModel):
     by_house: list[dict[str, object]]
 
 
+class TrendPoint(BaseModel):
+    month: str
+    value: float
+
+
+class OccupancyTrendPoint(BaseModel):
+    month: str
+    occupied: int
+    total: int
+
+
+class CollectionRatePoint(BaseModel):
+    month: str
+    invoiced: float
+    collected: float
+    rate: float
+
+
+class RevenueTrendResponse(BaseModel):
+    data: list[TrendPoint]
+
+
+class OccupancyTrendResponse(BaseModel):
+    data: list[OccupancyTrendPoint]
+
+
+class CollectionRateResponse(BaseModel):
+    data: list[CollectionRatePoint]
+
+
 class StatementEntry(BaseModel):
     date: datetime
     type: str

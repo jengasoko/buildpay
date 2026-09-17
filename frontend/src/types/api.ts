@@ -507,3 +507,35 @@ export interface OccupancyReport {
     occupants: number;
   }>;
 }
+
+// ---- Phase 7: Reporting & Analytics ----
+
+export interface TrendPoint {
+  month: string;
+  value: number;
+}
+
+export interface OccupancyTrendPoint {
+  month: string;
+  occupied: number;
+  total: number;
+}
+
+export interface CollectionRatePoint {
+  month: string;
+  invoiced: number;
+  collected: number;
+  rate: number;
+}
+
+export interface RevenueTrendResponse {
+  data: TrendPoint[];
+}
+
+export interface OccupancyTrendResponse {
+  data: OccupancyTrendPoint[];
+}
+
+export interface CollectionRateResponse {
+  data: CollectionRatePoint[];
+}

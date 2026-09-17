@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { useFinancialReport, useOccupancyReport } from '@/features/reports/hooks/useReports';
+import { useFinancialReport, useOccupancyReport, useExportFinancialCsv, useExportOccupancyCsv } from '@/features/reports/hooks/useReports';
+import { RevenueTrendChart } from '@/features/dashboard/components/RevenueTrendChart';
+import { OccupancyTrendChart } from '@/features/dashboard/components/OccupancyTrendChart';
+import { CollectionRateChart } from '@/features/dashboard/components/CollectionRateChart';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 
@@ -30,8 +33,14 @@ export function ReportsPage() {
 
   const financial = useFinancialReport(selectedYear, selectedMonth);
   const occupancy = useOccupancyReport();
+  const { isExporting: exportFinLoading, exportFinancial } = useExportFinancialCsv();
+  const { isExporting: exportOccLoading, exportOccupancy } = useExportOccupancyCsv();
 
   const finData = financial.data;
+
+  const handleExportFinancial = () => {
+    exportFinancial(selectedYear, selectedMonth);
+  };
 
   return (
     <div>
@@ -64,9 +73,18 @@ export function ReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Financial Report — {MONTHS.find((m) => m.value === selectedMonth)?.label} {selectedYear}
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Financial Report — {MONTHS.find((m) => m.value === selectedMonth)?.label} {selectedYear}
+            </h2>
+            <button
+              onClick={handleExportFinancial}
+              disabled={exportFinLoading || !finData}
+              className="px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {exportFinLoading ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
 
           {financial.isLoading && <LoadingSpinner message="Loading financial report..." />}
           {financial.error && (
@@ -150,7 +168,16 @@ export function ReportsPage() {
         </section>
 
         <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Occupancy Report</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Occupancy Report</h2>
+            <button
+              onClick={() => exportOccupancy()}
+              disabled={exportOccLoading || !occupancy.data}
+              className="px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {exportOccLoading ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
 
           {occupancy.isLoading && <LoadingSpinner message="Loading occupancy report..." />}
           {occupancy.error && (
@@ -244,6 +271,24 @@ export function ReportsPage() {
             </>
           )}
         </section>
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Trends</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-4">Revenue Trend (12 months)</h3>
+            <RevenueTrendChart />
+          </section>
+          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-md font-semibold text-gray-900 mb-4">Occupancy Trend (12 months)</h3>
+            <OccupancyTrendChart />
+          </section>
+          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-2">
+            <h3 className="text-md font-semibold text-gray-900 mb-4">Payment Collection Rate (12 months)</h3>
+            <CollectionRateChart />
+          </section>
+        </div>
       </div>
     </div>
   );

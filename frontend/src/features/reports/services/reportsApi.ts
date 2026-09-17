@@ -8,4 +8,11 @@ export const reportsApi = {
     }),
   occupancy: () =>
     apiClient.get<OccupancyReport>('/api/v1/dashboard/reports/occupancy'),
+  exportFinancial: (year: number, month: number) =>
+    apiClient.get('/api/v1/dashboard/reports/financial/export', {
+      params: { year, month },
+      responseType: 'blob',
+    }),
+  exportOccupancy: () =>
+    apiClient.get('/api/v1/dashboard/reports/occupancy/export', { responseType: 'blob' }),
 };

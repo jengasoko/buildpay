@@ -1,6 +1,10 @@
 import { useDashboardStats, useEmployeeDashboard } from '@/features/dashboard/hooks/useDashboard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
+import { StatCard } from '@/features/dashboard/components/StatCard';
+import { RevenueTrendChart } from '@/features/dashboard/components/RevenueTrendChart';
+import { OccupancyTrendChart } from '@/features/dashboard/components/OccupancyTrendChart';
+import { CollectionRateChart } from '@/features/dashboard/components/CollectionRateChart';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import type { ApplicationStatus, UserRole, InvoiceStatus, LeaseStatus } from '@/types/api';
@@ -34,23 +38,6 @@ const LEASE_STATUS_STYLES: Record<LeaseStatus, string> = {
   TERMINATED: 'bg-red-100 text-red-800',
   EXPIRED: 'bg-gray-100 text-gray-800',
 };
-
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  hint?: string;
-  accent?: string;
-}
-
-function StatCard({ label, value, hint, accent = 'text-gray-900' }: StatCardProps) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <p className="text-sm font-medium text-gray-500">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${accent}`}>{value}</p>
-      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
-    </div>
-  );
-}
 
 function EmployeeDashboardView() {
   const { user } = useAuth();
@@ -240,6 +227,7 @@ function AdminDashboardView() {
   const counts = data?.counts;
   const role: UserRole = user?.role ?? 'EMPLOYEE';
   const isFinancial = role === 'FINANCIAL_OFFICER' || role === 'ADMIN';
+  const showAnalytics = role === 'ADMIN' || role === 'FINANCIAL_OFFICER' || role === 'PROJECT_MANAGER';
   const recent = data?.recent_applications ?? [];
 
   return (
@@ -288,6 +276,26 @@ function AdminDashboardView() {
             accent="text-green-700"
             hint={`${counts.payments} payments recorded`}
           />
+        </div>
+      )}
+
+      {showAnalytics && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-md font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+              <RevenueTrendChart />
+            </section>
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-md font-semibold text-gray-900 mb-4">Occupancy Trend</h3>
+              <OccupancyTrendChart />
+            </section>
+            <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-2">
+              <h3 className="text-md font-semibold text-gray-900 mb-4">Payment Collection Rate</h3>
+              <CollectionRateChart />
+            </section>
+          </div>
         </div>
       )}
 

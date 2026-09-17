@@ -315,7 +315,10 @@ class Lease(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     occupancy_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("occupancies.id", use_alter=True), unique=True, nullable=False
+        Integer,
+        ForeignKey("occupancies.id", use_alter=True, name="fk_leases_occupancy_id"),
+        unique=True,
+        nullable=False,
     )
     employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     house_id: Mapped[int] = mapped_column(Integer, ForeignKey("houses.id"), nullable=False, index=True)
