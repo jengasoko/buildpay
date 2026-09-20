@@ -24,7 +24,7 @@ function renderLayout() {
 describe('MainLayout', () => {
   it('renders navigation links', () => {
     renderLayout();
-    expect(screen.getByText('HMS')).toBeInTheDocument();
+    expect(screen.getAllByText('BuildPay').length).toBeGreaterThan(0);
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Users')).toBeInTheDocument();
     expect(screen.getByText('Payments')).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe('MainLayout', () => {
 
   it('shows username', () => {
     renderLayout();
-    expect(screen.getByText(/admin/)).toBeInTheDocument();
+    expect(screen.getAllByText(/admin/).length).toBeGreaterThan(0);
   });
 
   it('renders logout button', () => {

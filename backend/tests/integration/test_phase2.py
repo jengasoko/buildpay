@@ -293,13 +293,13 @@ class TestPayments:
 
 
 class TestDashboardStats:
-    def test_any_authenticated_user_can_view_stats(self, client, db_session):
+    def test_any_authenticated_user_can_view_scoped_stats(self, client, db_session):
         employee, employer, officer, admin, house = _seed_workflow(db_session)
         token = _login(client, "p2_emp")
         response = client.get("/api/v1/dashboard/stats", headers=_auth(token))
         assert response.status_code == 200
         body = response.json()
-        assert body["counts"]["houses"] >= 1
+        assert body["counts"]["users"] == 1
         assert "recent_applications" in body
 
     def test_stats_require_authentication(self, client, db_session):

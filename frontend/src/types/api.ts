@@ -539,3 +539,43 @@ export interface OccupancyTrendResponse {
 export interface CollectionRateResponse {
   data: CollectionRatePoint[];
 }
+
+// ---- Phase 8: Role-based dashboards ----
+
+export interface EmployerStaffSummary {
+  total: number;
+  with_lease: number;
+  pending_approval: number;
+}
+
+export interface EmployerTeamLease {
+  employee_username: string;
+  house_title: string;
+  room_number: string | null;
+  start_date: string | null;
+  status: string;
+}
+
+export interface EmployerDashboard {
+  staff: EmployerStaffSummary;
+  team_houses: number;
+  pending_applications: number;
+  active_leases: number;
+  open_maintenance: number;
+  recent_applications: Application[];
+  team_leases: EmployerTeamLease[];
+}
+
+export interface FinancialDashboard {
+  month: number;
+  year: number;
+  collected_this_month: number;
+  collected_all_time: number;
+  outstanding: number;
+  overdue: number;
+  collection_rate: number;
+  open_invoices: number;
+  active_leases: number;
+  recent_payments: Payment[];
+  arrears: ArrearsBucket[];
+}

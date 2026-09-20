@@ -8,6 +8,8 @@ from app.schemas import (
     CollectionRateResponse,
     DashboardStatsResponse,
     EmployeeDashboardResponse,
+    EmployerDashboardResponse,
+    FinancialDashboardResponse,
     FinancialReport,
     OccupancyReport,
     OccupancyTrendResponse,
@@ -23,9 +25,25 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 @router.get("/stats", response_model=DashboardStatsResponse)
 def dashboard_stats(
     db: Session = Depends(get_db),
-    _current_user: User = Depends(require_role(*UserRole)),
+    current_user: User = Depends(require_role(*UserRole)),
 ):
-    return dashboard_service.get_dashboard_stats(db)
+    return dashboard_service.get_dashboard_stats(db, current_user)
+
+
+@router.get("/employer", response_model=EmployerDashboardResponse)
+def employer_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.EMPLOYER)),
+):
+    return dashboard_service.get_employer_dashboard(db, current_user)
+
+
+@router.get("/financial", response_model=FinancialDashboardResponse)
+def financial_dashboard(
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.FINANCIAL_OFFICER)),
+):
+    return dashboard_service.get_finance_dashboard(db)
 
 
 @router.get("/me", response_model=EmployeeDashboardResponse)

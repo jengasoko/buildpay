@@ -589,6 +589,44 @@ class DashboardStatsResponse(BaseModel):
     recent_applications: list[ApplicationResponse]
 
 
+class EmployerStaffSummary(BaseModel):
+    total: int
+    with_lease: int
+    pending_approval: int
+
+
+class EmployerTeamLease(BaseModel):
+    employee_username: str
+    house_title: str
+    room_number: str | None = None
+    start_date: datetime | None = None
+    status: str
+
+
+class EmployerDashboardResponse(BaseModel):
+    staff: EmployerStaffSummary
+    team_houses: int
+    pending_applications: int
+    active_leases: int
+    open_maintenance: int
+    recent_applications: list[ApplicationResponse] = []
+    team_leases: list[EmployerTeamLease] = []
+
+
+class FinancialDashboardResponse(BaseModel):
+    month: int
+    year: int
+    collected_this_month: float
+    collected_all_time: float
+    outstanding: float
+    overdue: float
+    collection_rate: float
+    open_invoices: int
+    active_leases: int
+    recent_payments: list[PaymentResponse] = []
+    arrears: list[ArrearsBucket] = []
+
+
 # --- Pagination ---
 class PaginatedResponse(BaseModel):
     items: list

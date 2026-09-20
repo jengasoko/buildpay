@@ -15,6 +15,20 @@ export function useEmployeeDashboard() {
   });
 }
 
+export function useEmployerDashboard() {
+  return useQuery({
+    queryKey: ['dashboard', 'employer'],
+    queryFn: () => dashboardApi.getEmployer().then((r) => r.data),
+  });
+}
+
+export function useFinancialDashboard() {
+  return useQuery({
+    queryKey: ['dashboard', 'financial'],
+    queryFn: () => dashboardApi.getFinancial().then((r) => r.data),
+  });
+}
+
 export function useRevenueTrend(months: number) {
   return useQuery({
     queryKey: ['dashboard', 'analytics', 'revenue-trend', months],

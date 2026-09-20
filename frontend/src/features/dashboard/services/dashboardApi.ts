@@ -3,6 +3,8 @@ import type {
   CollectionRateResponse,
   DashboardStats,
   EmployeeDashboard,
+  EmployerDashboard,
+  FinancialDashboard,
   OccupancyTrendResponse,
   RevenueTrendResponse,
 } from '@/types/api';
@@ -10,6 +12,8 @@ import type {
 export const dashboardApi = {
   getStats: () => apiClient.get<DashboardStats>('/api/v1/dashboard/stats'),
   getMe: () => apiClient.get<EmployeeDashboard>('/api/v1/dashboard/me'),
+  getEmployer: () => apiClient.get<EmployerDashboard>('/api/v1/dashboard/employer'),
+  getFinancial: () => apiClient.get<FinancialDashboard>('/api/v1/dashboard/financial'),
   getRevenueTrend: (months: number) =>
     apiClient.get<RevenueTrendResponse>('/api/v1/dashboard/analytics/revenue-trend', { params: { months } }),
   getOccupancyTrend: (months: number) =>
