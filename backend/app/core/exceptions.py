@@ -51,3 +51,12 @@ class ConflictException(AppException):
             message=message,
             status_code=status.HTTP_409_CONFLICT,
         )
+
+
+class TooManyRequestsException(AppException):
+    def __init__(self, message: str = "Too many requests, please try again later"):
+        super().__init__(
+            code="TOO_MANY_REQUESTS",
+            message=message,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )

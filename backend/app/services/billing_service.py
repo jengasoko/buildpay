@@ -200,16 +200,17 @@ def list_invoices(
     current_user: User | None = None,
 ) -> dict:
     skip = (page - 1) * page_size
-    invoices = invoice_repository.get_invoices(db, skip=skip, limit=page_size, lease_id=lease_id, status=status)
-    total = invoice_repository.count_invoices(db, lease_id=lease_id, status=status)
 
+    employee_ids: list[int] | None = None
     if current_user is not None and current_user.role == UserRole.EMPLOYEE:
-        invoices = [i for i in invoices if i.lease.employee_id == current_user.id]
-        total = len(invoices)
+        employee_ids = [current_user.id]
     elif current_user is not None and current_user.role == UserRole.EMPLOYER:
-        team = _team_employee_ids(db, current_user.id)
-        invoices = [i for i in invoices if i.lease.employee_id in team]
-        total = len(invoices)
+        employee_ids = _team_employee_ids(db, current_user.id) or [0]
+
+    invoices = invoice_repository.get_invoices(
+        db, skip=skip, limit=page_size, lease_id=lease_id, status=status, employee_ids=employee_ids
+    )
+    total = invoice_repository.count_invoices(db, lease_id=lease_id, status=status, employee_ids=employee_ids)
 
     return {
         "items": [InvoiceResponse.model_validate(i) for i in invoices],

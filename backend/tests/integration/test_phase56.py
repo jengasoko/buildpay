@@ -322,6 +322,36 @@ class TestMaintenanceWorkflow:
         )
         assert resp.status_code == 403
 
+    def test_employer_can_view_own_team_request(self, client, db_session):
+        employee, employer, _, house, p = _seed(db_session, "MV")
+        _approve(client, db_session, employee, employer, house, f"{p}_officer")
+        created = client.post(
+            "/api/v1/maintenance-requests",
+            json={"house_id": house.id, "title": "Fence", "description": "Broken gate"},
+            headers=_auth(_login(client, f"{p}_emp")),
+        ).json()
+        resp = client.get(
+            f"/api/v1/maintenance-requests/{created['id']}",
+            headers=_auth(_login(client, employer.username)),
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["id"] == created["id"]
+
+    def test_employer_cannot_view_other_team_request(self, client, db_session):
+        employee, employer, _, house, p = _seed(db_session, "MO")
+        _approve(client, db_session, employee, employer, house, f"{p}_officer")
+        created = client.post(
+            "/api/v1/maintenance-requests",
+            json={"house_id": house.id, "title": "Roof", "description": "Leak"},
+            headers=_auth(_login(client, f"{p}_emp")),
+        ).json()
+        other_employer = _create_user(db_session, "MO_other_employer", UserRole.EMPLOYER)
+        resp = client.get(
+            f"/api/v1/maintenance-requests/{created['id']}",
+            headers=_auth(_login(client, other_employer.username)),
+        )
+        assert resp.status_code == 403
+
 
 class TestRooms:
     def test_room_binding_swap_and_termination(self, client, db_session):

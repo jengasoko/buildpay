@@ -19,6 +19,55 @@ class TestAuthEndpoints:
         assert data["email"] == "new@example.com"
         assert "id" in data
 
+    def test_register_ignores_client_supplied_privileged_role(self, client):
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "username": "wannabeadmin",
+                "email": "wannabeadmin@example.com",
+                "password": "securepass123",
+                "role": "ADMIN",
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["role"] == "EMPLOYEE"
+
+    def test_register_rate_limited_after_too_many_attempts(self, client):
+        from app.core.config import settings
+
+        for i in range(settings.RATE_LIMIT_REGISTER_ATTEMPTS):
+            client.post(
+                "/api/v1/auth/register",
+                json={
+                    "username": f"rl_reg_{i}",
+                    "email": f"rl_reg_{i}@example.com",
+                    "password": "securepass123",
+                },
+            )
+        response = client.post(
+            "/api/v1/auth/register",
+            json={
+                "username": "rl_reg_over_limit",
+                "email": "rl_reg_over_limit@example.com",
+                "password": "securepass123",
+            },
+        )
+        assert response.status_code == 429
+
+    def test_login_rate_limited_after_too_many_attempts(self, client):
+        from app.core.config import settings
+
+        for _ in range(settings.RATE_LIMIT_LOGIN_ATTEMPTS):
+            client.post(
+                "/api/v1/auth/login",
+                json={"username": "nobody", "password": "wrong"},
+            )
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"username": "nobody", "password": "wrong"},
+        )
+        assert response.status_code == 429
+
     def test_register_duplicate_username(self, client):
         client.post(
             "/api/v1/auth/register",

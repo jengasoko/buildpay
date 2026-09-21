@@ -15,11 +15,13 @@ from app.middleware import RequestIDMiddleware, setup_cors
 
 logger = logging.getLogger("hms")
 
+_docs_enabled = settings.ENVIRONMENT != "production"
+
 app = FastAPI(
     title=settings.APP_NAME,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
 
 setup_cors(app)

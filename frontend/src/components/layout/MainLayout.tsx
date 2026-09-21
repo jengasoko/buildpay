@@ -31,7 +31,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
   { to: '/my-housing', label: 'My Housing', icon: KeyRound, roles: ['EMPLOYEE'] },
-  { to: '/projects', label: 'Projects', icon: Building2, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER'] },
+  { to: '/projects/manage', label: 'Projects', icon: Building2, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER'] },
   { to: '/houses', label: 'Houses', icon: Home, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
   { to: '/applications', label: 'Applications', icon: ClipboardList, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER', 'EMPLOYEE'] },
   { to: '/occupancies', label: 'Occupancies', icon: CalendarCheck, roles: ['ADMIN', 'PROJECT_MANAGER', 'FINANCIAL_OFFICER', 'EMPLOYER'] },

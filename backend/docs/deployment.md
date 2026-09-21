@@ -35,7 +35,13 @@ docker run -p 8000:8000 \
 4. Set `DEBUG=false`
 5. Configure `CORS_ORIGINS` with your frontend domain
 6. Run database migrations: `alembic upgrade head`
-7. Seed initial admin: `python scripts/seed_db.py`
+7. Create the initial admin account with your own credentials (never use
+   `scripts/seed_db.py` in production — it creates accounts with hardcoded,
+   publicly-known passwords and refuses to run when `ENVIRONMENT=production`):
+   ```bash
+   ADMIN_USERNAME=youradmin ADMIN_EMAIL=youradmin@yourcompany.com \
+     ADMIN_PASSWORD='a-strong-unique-password' python scripts/create_admin.py
+   ```
 8. Run with gunicorn: `gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker`
 
 ## Database Migrations

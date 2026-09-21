@@ -1,6 +1,8 @@
 .env
 .venv/
 venv/
+.pgdata/
+*.db
 __pycache__/
 *.pyc
 *.pyo

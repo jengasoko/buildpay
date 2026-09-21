@@ -1,3 +1,8 @@
+# Direct production dependencies, loosely versioned — this is the file to
+# edit when adding/upgrading a package. Docker and CI install from the
+# fully pinned requirements.lock.txt / requirements-dev.lock.txt instead,
+# for reproducible builds; regenerate those after changing this file (see
+# the header comment in requirements.lock.txt for how).
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 sqlalchemy>=2.0.0

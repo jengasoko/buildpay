@@ -45,13 +45,15 @@ def list_occupancies(
         )
         raise ForbiddenException("Employees cannot browse occupancy records")
     skip = (page - 1) * page_size
-    occupancies = occupancy_repository.get_occupancies(db, skip=skip, limit=page_size, current_only=current_only)
+
+    employee_ids: list[int] | None = None
     if current_user is not None and current_user.role == UserRole.EMPLOYER:
-        team_ids = {e.employee_id for e in current_user.employment_as_employer}
-        occupancies = [o for o in occupancies if o.employee_id in team_ids]
-        total = len(occupancies)
-    else:
-        total = occupancy_repository.count_occupancies(db, current_only=current_only)
+        employee_ids = [e.employee_id for e in current_user.employment_as_employer] or [0]
+
+    occupancies = occupancy_repository.get_occupancies(
+        db, skip=skip, limit=page_size, current_only=current_only, employee_ids=employee_ids
+    )
+    total = occupancy_repository.count_occupancies(db, current_only=current_only, employee_ids=employee_ids)
     return {
         "items": [OccupancyResponse.model_validate(o) for o in occupancies],
         "total": total,

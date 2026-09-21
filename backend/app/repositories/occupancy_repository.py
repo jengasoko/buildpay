@@ -21,17 +21,31 @@ def get_occupancy_by_application(db: Session, application_id: int) -> Occupancy 
     )
 
 
-def get_occupancies(db: Session, skip: int = 0, limit: int = 100, current_only: bool = False) -> list[Occupancy]:
+def get_occupancies(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    current_only: bool = False,
+    employee_ids: list[int] | None = None,
+) -> list[Occupancy]:
     query = db.query(Occupancy).options(joinedload(Occupancy.house), joinedload(Occupancy.employee))
     if current_only:
         query = query.filter(Occupancy.ended_at.is_(None))
+    if employee_ids is not None:
+        query = query.filter(Occupancy.employee_id.in_(employee_ids))
     return query.order_by(Occupancy.id.desc()).offset(skip).limit(limit).all()
 
 
-def count_occupancies(db: Session, current_only: bool = False) -> int:
+def count_occupancies(
+    db: Session,
+    current_only: bool = False,
+    employee_ids: list[int] | None = None,
+) -> int:
     query = db.query(Occupancy)
     if current_only:
         query = query.filter(Occupancy.ended_at.is_(None))
+    if employee_ids is not None:
+        query = query.filter(Occupancy.employee_id.in_(employee_ids))
     return query.count()
 
 

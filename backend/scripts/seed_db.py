@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Seed the database with a rich demo dataset for Phase 5/6 (role workflows)."""
+"""Seed the database with a rich demo dataset for Phase 5/6 (role workflows).
+
+Every account this script creates uses a short, hardcoded, publicly-visible
+password (see the printed credentials below) — it is for local development
+and demos only. Never run it against a production database; use
+scripts/create_admin.py to bootstrap a real production admin account
+instead.
+"""
 
 import sys
 from datetime import UTC, datetime, timedelta
@@ -7,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.security import hash_password
 from app.models import (
@@ -28,6 +36,14 @@ def _now() -> datetime:
 
 
 def seed_db():
+    if settings.ENVIRONMENT == "production":
+        print(
+            "Refusing to run: ENVIRONMENT=production. This script creates accounts "
+            "with hardcoded, publicly-known passwords and must never touch a "
+            "production database. Use scripts/create_admin.py instead."
+        )
+        sys.exit(1)
+
     db = SessionLocal()
     try:
         if db.query(User).filter(User.username == "admin").first():
@@ -80,7 +96,7 @@ def seed_db():
                 last_name="Otieno",
                 role=UserRole.EMPLOYEE,
                 is_active=True,
-                phone="+254711000001",
+                phone="+255711000001",
             ),
             User(
                 username="amina",
@@ -90,7 +106,7 @@ def seed_db():
                 last_name="Mohammed",
                 role=UserRole.EMPLOYEE,
                 is_active=True,
-                phone="+254711000002",
+                phone="+255711000002",
             ),
             User(
                 username="dorcas",
@@ -100,7 +116,7 @@ def seed_db():
                 last_name="Njeri",
                 role=UserRole.EMPLOYEE,
                 is_active=True,
-                phone="+254711000003",
+                phone="+255711000003",
             ),
         ]
         db.add_all(users)
@@ -110,14 +126,14 @@ def seed_db():
         projects = [
             Project(
                 name="Green Meadows Phase 1",
-                location="Syokimau, Machakos",
+                location="Mbezi Beach, Dar es Salaam",
                 description="Affordable housing estate with 3-bedroom units.",
                 start_date=start,
                 expected_completion=start + timedelta(days=365),
             ),
             Project(
                 name="Riverside Heights",
-                location="Riverside, Nairobi",
+                location="Upanga, Dar es Salaam",
                 description="Riverfront apartments for young professionals.",
                 start_date=start - timedelta(days=60),
                 expected_completion=start + timedelta(days=240),

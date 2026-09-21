@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useApplications } from '@/features/applications/hooks/useApplications';
 import { useMyPayments } from '@/features/payments/hooks/usePayments';
 import { useNotifications } from '@/features/notifications/hooks/useNotifications';
+import { useMyLease } from '@/features/leases/hooks/useLeases';
+import { useInvoices } from '@/features/invoices/hooks/useInvoices';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('@/features/applications/hooks/useApplications', () => ({ useApplications: vi.fn() }));
@@ -13,6 +15,8 @@ vi.mock('@/features/payments/hooks/usePayments', () => ({ useMyPayments: vi.fn()
 vi.mock('@/features/notifications/hooks/useNotifications', () => ({
   useNotifications: vi.fn(),
 }));
+vi.mock('@/features/leases/hooks/useLeases', () => ({ useMyLease: vi.fn() }));
+vi.mock('@/features/invoices/hooks/useInvoices', () => ({ useInvoices: vi.fn() }));
 
 const application = {
   id: 1,
@@ -75,6 +79,16 @@ describe('MyHousingPage', () => {
     } as never);
     vi.mocked(useNotifications).mockReturnValue({
       data: { items: [notification], total: 1, page: 1, page_size: 10 },
+      isLoading: false,
+      error: null,
+    } as never);
+    vi.mocked(useMyLease).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+    } as never);
+    vi.mocked(useInvoices).mockReturnValue({
+      data: { items: [], total: 0, page: 1, page_size: 20 },
       isLoading: false,
       error: null,
     } as never);

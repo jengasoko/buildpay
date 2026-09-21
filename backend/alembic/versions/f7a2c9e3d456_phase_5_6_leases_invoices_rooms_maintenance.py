@@ -18,28 +18,22 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     lease_status = sa.Enum('DRAFT', 'PENDING_SIGNATURE', 'ACTIVE', 'TERMINATED', 'EXPIRED', name='leasestatus')
-    lease_status.create(op.get_bind(), checkfirst=True)
 
     block_type = sa.Enum('PRIVATE', 'SHARED', 'DORMITORY', 'OTHER', name='blocktype')
-    block_type.create(op.get_bind(), checkfirst=True)
 
     invoice_status = sa.Enum('OPEN', 'PARTIAL', 'PAID', 'OVERDUE', 'VOID', name='invoicestatus')
-    invoice_status.create(op.get_bind(), checkfirst=True)
 
     charge_type = sa.Enum('RENT', 'DEPOSIT', 'UTILITY', 'LATE_FEE', 'OTHER', name='chargetype')
-    charge_type.create(op.get_bind(), checkfirst=True)
 
     maintenance_status = sa.Enum('SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', name='maintenancestatus')
-    maintenance_status.create(op.get_bind(), checkfirst=True)
 
     maintenance_category = sa.Enum('PLUMBING', 'ELECTRICAL', 'STRUCTURAL', 'PEST_CONTROL', 'APPLIANCE', 'OTHER', name='maintenancecategory')
-    maintenance_category.create(op.get_bind(), checkfirst=True)
 
     op.create_table('rooms',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('house_id', sa.Integer(), nullable=False),
         sa.Column('room_number', sa.String(length=50), nullable=False),
-        sa.Column('block_type', sa.Enum('PRIVATE', 'SHARED', 'DORMITORY', 'OTHER', name='blocktype'), nullable=False),
+        sa.Column('block_type', block_type, nullable=False),
         sa.Column('capacity', sa.Integer(), nullable=False),
         sa.Column('is_available', sa.Boolean(), nullable=False),
         sa.Column('notes', sa.Text(), nullable=True),
@@ -55,7 +49,7 @@ def upgrade() -> None:
         sa.Column('employee_id', sa.Integer(), nullable=False),
         sa.Column('house_id', sa.Integer(), nullable=False),
         sa.Column('room_id', sa.Integer(), nullable=True),
-        sa.Column('status', sa.Enum('DRAFT', 'PENDING_SIGNATURE', 'ACTIVE', 'TERMINATED', 'EXPIRED', name='leasestatus'), nullable=False),
+        sa.Column('status', lease_status, nullable=False),
         sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
         sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
         sa.Column('rent_amount', sa.Numeric(15, 2), nullable=False),
@@ -86,7 +80,7 @@ def upgrade() -> None:
         sa.Column('total_amount', sa.Numeric(15, 2), nullable=False),
         sa.Column('paid_amount', sa.Numeric(15, 2), nullable=False),
         sa.Column('late_fee_amount', sa.Numeric(15, 2), nullable=False),
-        sa.Column('status', sa.Enum('OPEN', 'PARTIAL', 'PAID', 'OVERDUE', 'VOID', name='invoicestatus'), nullable=False),
+        sa.Column('status', invoice_status, nullable=False),
         sa.Column('notes', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['lease_id'], ['leases.id']),
@@ -97,7 +91,7 @@ def upgrade() -> None:
     op.create_table('charges',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('invoice_id', sa.Integer(), nullable=False),
-        sa.Column('charge_type', sa.Enum('RENT', 'DEPOSIT', 'UTILITY', 'LATE_FEE', 'OTHER', name='chargetype'), nullable=False),
+        sa.Column('charge_type', charge_type, nullable=False),
         sa.Column('label', sa.String(length=255), nullable=False),
         sa.Column('amount', sa.Numeric(15, 2), nullable=False),
         sa.ForeignKeyConstraint(['invoice_id'], ['invoices.id']),
@@ -111,11 +105,11 @@ def upgrade() -> None:
         sa.Column('room_id', sa.Integer(), nullable=True),
         sa.Column('employee_id', sa.Integer(), nullable=False),
         sa.Column('reported_by_id', sa.Integer(), nullable=True),
-        sa.Column('category', sa.Enum('PLUMBING', 'ELECTRICAL', 'STRUCTURAL', 'PEST_CONTROL', 'APPLIANCE', 'OTHER', name='maintenancecategory'), nullable=False),
+        sa.Column('category', maintenance_category, nullable=False),
         sa.Column('title', sa.String(length=255), nullable=False),
         sa.Column('description', sa.Text(), nullable=False),
         sa.Column('priority', sa.String(length=20), nullable=False),
-        sa.Column('status', sa.Enum('SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', name='maintenancestatus'), nullable=False),
+        sa.Column('status', maintenance_status, nullable=False),
         sa.Column('assigned_to_id', sa.Integer(), nullable=True),
         sa.Column('assigned_by_id', sa.Integer(), nullable=True),
         sa.Column('resolution_note', sa.Text(), nullable=True),
@@ -140,7 +134,9 @@ def upgrade() -> None:
     op.create_foreign_key('fk_applications_reviewed_by_id', 'applications', 'users', ['reviewed_by_id'], ['id'])
 
     op.add_column('payments', sa.Column('invoice_id', sa.Integer(), nullable=True))
-    op.add_column('payments', sa.Column('method', sa.Enum('CASH', 'EFT', 'CARD', 'PAYROLL_DEDUCTION', name='paymentmethod'), nullable=False, server_default='CASH'))
+    payment_method = sa.Enum('CASH', 'EFT', 'CARD', 'PAYROLL_DEDUCTION', name='paymentmethod')
+    payment_method.create(op.get_bind(), checkfirst=True)
+    op.add_column('payments', sa.Column('method', payment_method, nullable=False, server_default='CASH'))
     op.create_index('ix_payments_invoice_id', 'payments', ['invoice_id'])
     op.create_foreign_key('fk_payments_invoice_id', 'payments', 'invoices', ['invoice_id'], ['id'])
 

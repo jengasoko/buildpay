@@ -32,7 +32,7 @@ class TestHouseCreateSchema:
     def test_valid_house(self):
         house = HouseCreate(
             title="Test House",
-            location="Nairobi",
+            location="Dar es Salaam",
             rent_price=1500.00,
             price=50000.00,
         )
@@ -44,7 +44,7 @@ class TestHouseCreateSchema:
         try:
             HouseCreate(
                 title="Test House",
-                location="Nairobi",
+                location="Dar es Salaam",
                 rent_price=-100,
             )
             raise AssertionError("Should have raised ValidationError")

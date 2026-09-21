@@ -1,0 +1,51 @@
+# Fully pinned production dependency set, resolved for Python 3.11
+# (the Dockerfile's base image) — not whatever Python happens to be
+# running pip. This is what Docker builds install for reproducible
+# production builds. Do not hand-edit — regenerate with:
+#
+#   python -m venv /tmp/lockenv
+#   /tmp/lockenv/bin/pip install --only-binary=:all: --python-version 3.11 \
+#       --implementation cp --abi cp311 --platform manylinux2014_x86_64 \
+#       --target /tmp/lockcheck --dry-run -r requirements.txt
+#   # copy the "Would install ..." line's versions in here
+#
+# then re-add this header and re-run the test suite + ruff against it
+# (in a real 3.11 environment where possible).
+Mako==1.4.1
+MarkupSafe==3.0.3
+PyYAML==6.0.3
+SQLAlchemy==2.0.54
+alembic==1.20.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.15.1
+bcrypt==5.0.0
+cffi==2.1.1
+click==8.5.0
+cryptography==50.0.1
+dnspython==2.8.0
+ecdsa==0.19.2
+email-validator==2.3.0
+fastapi==0.141.1
+greenlet==3.2.5
+gunicorn==26.2.0
+h11==0.16.0
+httptools==0.8.0
+idna==3.20
+psycopg2-binary==2.9.13
+pyasn1==0.6.4
+pycparser==3.0
+pydantic-settings==2.15.0
+pydantic==2.13.5
+pydantic_core==2.46.5
+python-dotenv==1.2.3
+python-jose==3.5.0
+rsa==4.9.1
+six==1.17.0
+starlette==1.6.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+uvicorn==0.53.0
+uvloop==0.22.1
+watchfiles==1.2.0
+websockets==17.1

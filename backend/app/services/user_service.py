@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import BadRequestException, ConflictException, NotFoundException
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models import User
+from app.models import User, UserRole
 from app.repositories import user_repository
 from app.schemas import LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate
 from app.services.logs import log_event, log_security_event
@@ -16,6 +16,9 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
 
     user_data = data.model_dump()
     user_data["hashed_password"] = hash_password(user_data.pop("password"))
+    # Public self-registration must never grant elevated roles. Privileged
+    # roles can only be assigned afterwards by an admin via PUT /users/{id}.
+    user_data["role"] = UserRole.EMPLOYEE
     user = user_repository.create_user(db, user_data)
     log_event(
         db,

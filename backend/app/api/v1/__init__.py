@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     notifications,
     occupancies,
     payments,
+    public,
     rooms,
     users,
 )
@@ -33,3 +34,4 @@ api_router.include_router(rooms.router)
 api_router.include_router(leases.router)
 api_router.include_router(invoices.router)
 api_router.include_router(maintenance_requests.router)
+api_router.include_router(public.router)

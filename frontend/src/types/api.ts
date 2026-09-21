@@ -540,6 +540,52 @@ export interface CollectionRateResponse {
   data: CollectionRatePoint[];
 }
 
+export type ProjectStatus = 'PLANNED' | 'ONGOING' | 'COMPLETED';
+
+export interface PublicProject {
+  id: number;
+  name: string;
+  location: string;
+  description: string | null;
+  start_date: string;
+  expected_completion: string;
+  status: ProjectStatus;
+  image_url: string | null;
+  is_featured: boolean;
+}
+
+export interface PublicHouse {
+  id: number;
+  project_id: number | null;
+  title: string;
+  bedrooms: number;
+  bathrooms: number;
+  area_sqft: number;
+  location: string;
+  rent_price: number;
+  price: number;
+  image_url: string | null;
+}
+
+export interface PublicSiteStats {
+  projects: number;
+  houses: number;
+  available_houses: number;
+}
+
+export interface PublicSiteContact {
+  email: string;
+  phone: string;
+  address: string;
+}
+
+export interface PublicSite {
+  brand_name: string;
+  tagline: string;
+  stats: PublicSiteStats;
+  contact: PublicSiteContact;
+}
+
 // ---- Phase 8: Role-based dashboards ----
 
 export interface EmployerStaffSummary {

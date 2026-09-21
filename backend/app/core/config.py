@@ -32,5 +32,12 @@ class Settings(BaseSettings):
 
     DB_ECHO: bool = Field(default=False, description="Enable SQL query logging")
 
+    RATE_LIMIT_LOGIN_ATTEMPTS: int = Field(default=10, description="Max /auth/login attempts per window per IP")
+    RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = Field(default=60, description="Login rate-limit window, in seconds")
+    RATE_LIMIT_REGISTER_ATTEMPTS: int = Field(default=5, description="Max /auth/register attempts per window per IP")
+    RATE_LIMIT_REGISTER_WINDOW_SECONDS: int = Field(
+        default=60, description="Registration rate-limit window, in seconds"
+    )
+
 
 settings = Settings()

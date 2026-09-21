@@ -21,6 +21,12 @@ class ApplicationStatus(enum.StrEnum):
     REJECTED = "REJECTED"
 
 
+class ProjectStatus(enum.StrEnum):
+    PLANNED = "PLANNED"
+    ONGOING = "ONGOING"
+    COMPLETED = "COMPLETED"
+
+
 class LeaseStatus(enum.StrEnum):
     ACTIVE = "ACTIVE"
     EXPIRED = "EXPIRED"
@@ -123,6 +129,9 @@ class Project(Base):
     start_date: Mapped[str] = mapped_column(DateTime(timezone=True), nullable=False)
     expected_completion: Mapped[str] = mapped_column(DateTime(timezone=True), nullable=False)
     actual_completion: Mapped[str | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[ProjectStatus] = mapped_column(Enum(ProjectStatus), default=ProjectStatus.ONGOING, nullable=False)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[str] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[str] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

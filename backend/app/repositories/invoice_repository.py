@@ -2,11 +2,27 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.models import Charge, Invoice, InvoiceStatus
+from app.models import Charge, Invoice, InvoiceStatus, Lease
 
 
 def get_invoice_by_id(db: Session, invoice_id: int) -> Invoice | None:
     return db.query(Invoice).filter(Invoice.id == invoice_id).first()
+
+
+def _scoped_invoices_query(
+    db: Session,
+    lease_id: int | None,
+    status: InvoiceStatus | None,
+    employee_ids: list[int] | None,
+):
+    query = db.query(Invoice)
+    if employee_ids is not None:
+        query = query.join(Lease, Invoice.lease_id == Lease.id).filter(Lease.employee_id.in_(employee_ids))
+    if lease_id is not None:
+        query = query.filter(Invoice.lease_id == lease_id)
+    if status is not None:
+        query = query.filter(Invoice.status == status)
+    return query
 
 
 def get_invoices(
@@ -15,22 +31,19 @@ def get_invoices(
     limit: int = 100,
     lease_id: int | None = None,
     status: InvoiceStatus | None = None,
+    employee_ids: list[int] | None = None,
 ) -> list[Invoice]:
-    query = db.query(Invoice)
-    if lease_id is not None:
-        query = query.filter(Invoice.lease_id == lease_id)
-    if status is not None:
-        query = query.filter(Invoice.status == status)
+    query = _scoped_invoices_query(db, lease_id, status, employee_ids)
     return query.order_by(Invoice.period_start.desc()).offset(skip).limit(limit).all()
 
 
-def count_invoices(db: Session, lease_id: int | None = None, status: InvoiceStatus | None = None) -> int:
-    query = db.query(Invoice)
-    if lease_id is not None:
-        query = query.filter(Invoice.lease_id == lease_id)
-    if status is not None:
-        query = query.filter(Invoice.status == status)
-    return query.count()
+def count_invoices(
+    db: Session,
+    lease_id: int | None = None,
+    status: InvoiceStatus | None = None,
+    employee_ids: list[int] | None = None,
+) -> int:
+    return _scoped_invoices_query(db, lease_id, status, employee_ids).count()
 
 
 def get_open_invoices_for_lease(db: Session, lease_id: int) -> list[Invoice]:

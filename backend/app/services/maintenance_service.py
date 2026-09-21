@@ -66,7 +66,7 @@ def _assert_visible(db: Session, request: MaintenanceRequest, current_user: User
         return
     if current_user.role == UserRole.EMPLOYEE and request.employee_id == current_user.id:
         return
-    if request.employee_id and current_user.id in _team_employee_ids(db, request.employee_id):
+    if current_user.role == UserRole.EMPLOYER and request.employee_id in _team_employee_ids(db, current_user.id):
         return
     raise ForbiddenException("Insufficient permissions to view this maintenance request")
 

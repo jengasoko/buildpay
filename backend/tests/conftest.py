@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.database import Base, get_db
+from app.core.rate_limit import rate_limiter
 from app.main import app
 
 TEST_DATABASE_URL = os.getenv(
@@ -45,6 +46,15 @@ def db_session():
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def _reset_rate_limits():
+    # TestClient requests all share one fake host, so the rate limiter's
+    # per-IP buckets must be cleared between tests or they'd leak across
+    # every test that happens to hit /auth/login or /auth/register.
+    rate_limiter._hits.clear()
+    yield
 
 
 @pytest.fixture(scope="function")

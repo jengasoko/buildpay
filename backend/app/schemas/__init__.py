@@ -11,6 +11,7 @@ from app.models import (
     MaintenanceCategory,
     MaintenanceStatus,
     PaymentMethod,
+    ProjectStatus,
     UserRole,
 )
 
@@ -81,6 +82,9 @@ class ProjectCreate(BaseModel):
     start_date: datetime
     expected_completion: datetime
     actual_completion: datetime | None = None
+    status: ProjectStatus = ProjectStatus.ONGOING
+    image_url: str | None = Field(default=None, max_length=500)
+    is_featured: bool = False
 
 
 class ProjectUpdate(BaseModel):
@@ -90,6 +94,9 @@ class ProjectUpdate(BaseModel):
     start_date: datetime | None = None
     expected_completion: datetime | None = None
     actual_completion: datetime | None = None
+    status: ProjectStatus | None = None
+    image_url: str | None = None
+    is_featured: bool | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -100,6 +107,9 @@ class ProjectResponse(BaseModel):
     start_date: datetime
     expected_completion: datetime
     actual_completion: datetime | None
+    status: ProjectStatus
+    image_url: str | None
+    is_featured: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -633,3 +643,52 @@ class PaginatedResponse(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# --- Public Website ---
+class PublicProjectResponse(BaseModel):
+    id: int
+    name: str
+    location: str
+    description: str | None
+    start_date: datetime
+    expected_completion: datetime
+    status: ProjectStatus
+    image_url: str | None
+    is_featured: bool
+
+    model_config = {"from_attributes": True}
+
+
+class PublicHouseResponse(BaseModel):
+    id: int
+    project_id: int | None
+    title: str
+    bedrooms: int
+    bathrooms: int
+    area_sqft: float
+    location: str
+    rent_price: float
+    price: float
+    image_url: str | None
+
+    model_config = {"from_attributes": True}
+
+
+class PublicSiteStats(BaseModel):
+    projects: int
+    houses: int
+    available_houses: int
+
+
+class PublicSiteContact(BaseModel):
+    email: str
+    phone: str
+    address: str
+
+
+class PublicSiteResponse(BaseModel):
+    brand_name: str
+    tagline: str
+    stats: PublicSiteStats
+    contact: PublicSiteContact
